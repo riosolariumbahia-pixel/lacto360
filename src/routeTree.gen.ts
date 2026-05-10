@@ -12,7 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppVendasRouteImport } from './routes/app.vendas'
 import { Route as AppProducaoRouteImport } from './routes/app.producao'
+import { Route as AppEstoqueRouteImport } from './routes/app.estoque'
+import { Route as AppClientesRouteImport } from './routes/app.clientes'
 
 const AppRoute = AppRouteImport.update({
   id: '/app',
@@ -29,36 +32,81 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppVendasRoute = AppVendasRouteImport.update({
+  id: '/vendas',
+  path: '/vendas',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProducaoRoute = AppProducaoRouteImport.update({
   id: '/producao',
   path: '/producao',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEstoqueRoute = AppEstoqueRouteImport.update({
+  id: '/estoque',
+  path: '/estoque',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppClientesRoute = AppClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
   getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/clientes': typeof AppClientesRoute
+  '/app/estoque': typeof AppEstoqueRoute
   '/app/producao': typeof AppProducaoRoute
+  '/app/vendas': typeof AppVendasRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/app/clientes': typeof AppClientesRoute
+  '/app/estoque': typeof AppEstoqueRoute
   '/app/producao': typeof AppProducaoRoute
+  '/app/vendas': typeof AppVendasRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
+  '/app/clientes': typeof AppClientesRoute
+  '/app/estoque': typeof AppEstoqueRoute
   '/app/producao': typeof AppProducaoRoute
+  '/app/vendas': typeof AppVendasRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/app/producao' | '/app/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/app/clientes'
+    | '/app/estoque'
+    | '/app/producao'
+    | '/app/vendas'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/app/producao' | '/app'
-  id: '__root__' | '/' | '/app' | '/app/producao' | '/app/'
+  to:
+    | '/'
+    | '/app/clientes'
+    | '/app/estoque'
+    | '/app/producao'
+    | '/app/vendas'
+    | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/app/clientes'
+    | '/app/estoque'
+    | '/app/producao'
+    | '/app/vendas'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -89,6 +137,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/vendas': {
+      id: '/app/vendas'
+      path: '/vendas'
+      fullPath: '/app/vendas'
+      preLoaderRoute: typeof AppVendasRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/producao': {
       id: '/app/producao'
       path: '/producao'
@@ -96,16 +151,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProducaoRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/estoque': {
+      id: '/app/estoque'
+      path: '/estoque'
+      fullPath: '/app/estoque'
+      preLoaderRoute: typeof AppEstoqueRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/clientes': {
+      id: '/app/clientes'
+      path: '/clientes'
+      fullPath: '/app/clientes'
+      preLoaderRoute: typeof AppClientesRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppClientesRoute: typeof AppClientesRoute
+  AppEstoqueRoute: typeof AppEstoqueRoute
   AppProducaoRoute: typeof AppProducaoRoute
+  AppVendasRoute: typeof AppVendasRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppClientesRoute: AppClientesRoute,
+  AppEstoqueRoute: AppEstoqueRoute,
   AppProducaoRoute: AppProducaoRoute,
+  AppVendasRoute: AppVendasRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
