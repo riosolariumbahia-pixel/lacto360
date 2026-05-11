@@ -1,93 +1,173 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
+export type AppRole = Database["public"]["Enums"]["app_role"];
 export type Plan = "trial" | "pro";
+
+export type SessionUser = {
+  id: string;
+  email: string;
+  name: string;
+  laticinio: string;
+};
+
 export type Session = {
-  user: { name: string; email: string; laticinio: string } | null;
-  trialStartedAt: number | null;
+  ready: boolean;
+  user: SessionUser | null;
+  orgId: string | null;
+  role: AppRole | null;
   plan: Plan;
+  trialEndsAt: number | null;
+  trialStartedAt: number | null;
   onboarded: boolean;
 };
 
-const KEY = "sl360.session";
-const DEFAULT: Session = { user: null, trialStartedAt: null, plan: "trial", onboarded: false };
+const ONB_KEY = "sl360.onboarded";
+
+const DEFAULT: Session = {
+  ready: false,
+  user: null,
+  orgId: null,
+  role: null,
+  plan: "trial",
+  trialEndsAt: null,
+  trialStartedAt: null,
+  onboarded: false,
+};
 
 const listeners = new Set<() => void>();
 let cache: Session = DEFAULT;
-let hydrated = false;
+let initialized = false;
 
-function read(): Session {
-  if (typeof window === "undefined") return DEFAULT;
-  try {
-    const raw = window.localStorage.getItem(KEY);
-    return raw ? { ...DEFAULT, ...JSON.parse(raw) } : DEFAULT;
-  } catch {
-    return DEFAULT;
-  }
-}
-
-function write(s: Session) {
-  cache = s;
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(KEY, JSON.stringify(s));
-  }
+function emit(next: Session) {
+  cache = next;
   listeners.forEach((l) => l());
 }
 
-function subscribe(l: () => void) {
-  if (!hydrated && typeof window !== "undefined") {
-    cache = read();
-    hydrated = true;
+async function hydrate(userId: string | null, email: string | null) {
+  if (!userId) {
+    emit({ ...DEFAULT, ready: true });
+    return;
   }
-  listeners.add(l);
-  return () => listeners.delete(l);
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, org_id, organizations(name, plan, trial_ends_at)")
+    .eq("id", userId)
+    .maybeSingle();
+  const { data: roles } = await supabase
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .limit(1);
+
+  const org = (profile?.organizations as { name: string; plan: string; trial_ends_at: string } | null) ?? null;
+  const trialEndsAt = org?.trial_ends_at ? new Date(org.trial_ends_at).getTime() : null;
+  const onboarded = typeof window !== "undefined" && window.localStorage.getItem(ONB_KEY) === "1";
+
+  emit({
+    ready: true,
+    user: {
+      id: userId,
+      email: email ?? "",
+      name: profile?.full_name ?? email?.split("@")[0] ?? "Usuário",
+      laticinio: org?.name ?? "Meu laticínio",
+    },
+    orgId: profile?.org_id ?? null,
+    role: (roles?.[0]?.role as AppRole | undefined) ?? null,
+    plan: org?.plan === "pro" ? "pro" : "trial",
+    trialEndsAt,
+    trialStartedAt: trialEndsAt ? trialEndsAt - 7 * 86400000 : null,
+    onboarded,
+  });
 }
 
-export function useSession() {
-  const s = useSyncExternalStore(
-    subscribe,
-    () => cache,
-    () => DEFAULT,
-  );
-  return s;
+function init() {
+  if (initialized || typeof window === "undefined") return;
+  initialized = true;
+  supabase.auth.onAuthStateChange((_e, sess) => {
+    void hydrate(sess?.user?.id ?? null, sess?.user?.email ?? null);
+  });
+  void supabase.auth.getSession().then(({ data }) => {
+    void hydrate(data.session?.user?.id ?? null, data.session?.user?.email ?? null);
+  });
+}
+
+export function useSession(): Session {
+  const [, force] = useState(0);
+  useEffect(() => {
+    init();
+    const l = () => force((n) => n + 1);
+    listeners.add(l);
+    return () => {
+      listeners.delete(l);
+    };
+  }, []);
+  return cache;
 }
 
 export const sessionApi = {
-  get: () => (hydrated ? cache : read()),
-  signIn(email: string, name = "João Silva", laticinio = "Laticínio Vale Verde") {
-    const cur = read();
-    write({
-      ...cur,
-      user: { email, name, laticinio },
-      trialStartedAt: cur.trialStartedAt ?? Date.now(),
-    });
+  get: () => cache,
+  async signIn(email: string, password: string) {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return error;
   },
-  signUp(name: string, email: string, laticinio: string) {
-    write({
-      user: { name, email, laticinio },
-      trialStartedAt: Date.now(),
-      plan: "trial",
-      onboarded: false,
+  async signUp(opts: { fullName: string; email: string; password: string; companyName: string; inviteToken?: string }) {
+    const redirectTo =
+      typeof window !== "undefined" ? `${window.location.origin}/app` : undefined;
+    const { error } = await supabase.auth.signUp({
+      email: opts.email,
+      password: opts.password,
+      options: {
+        emailRedirectTo: redirectTo,
+        data: {
+          full_name: opts.fullName,
+          company_name: opts.companyName,
+          invite_token: opts.inviteToken,
+        },
+      },
     });
+    return error;
+  },
+  async signOut() {
+    await supabase.auth.signOut();
+    if (typeof window !== "undefined") window.localStorage.removeItem(ONB_KEY);
   },
   setOnboarded(v: boolean) {
-    write({ ...read(), onboarded: v });
+    if (typeof window === "undefined") return;
+    if (v) window.localStorage.setItem(ONB_KEY, "1");
+    else window.localStorage.removeItem(ONB_KEY);
+    emit({ ...cache, onboarded: v });
   },
-  upgrade() {
-    write({ ...read(), plan: "pro" });
+  async upgrade() {
+    if (!cache.orgId) return;
+    await supabase.from("organizations").update({ plan: "pro" }).eq("id", cache.orgId);
+    emit({ ...cache, plan: "pro" });
   },
-  signOut() {
-    write(DEFAULT);
+  async resetPassword(email: string) {
+    const redirectTo =
+      typeof window !== "undefined" ? `${window.location.origin}/reset-password` : undefined;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    return error;
   },
 };
 
 export function trialDaysLeft(s: Session) {
-  if (!s.trialStartedAt) return 7;
-  const elapsed = (Date.now() - s.trialStartedAt) / 86400000;
-  return Math.max(0, Math.ceil(7 - elapsed));
+  if (!s.trialEndsAt) return 7;
+  const left = (s.trialEndsAt - Date.now()) / 86400000;
+  return Math.max(0, Math.ceil(left));
 }
 
-export function useHydrated() {
-  const [h, setH] = useState(false);
-  useEffect(() => setH(true), []);
-  return h;
+export function homeForRole(role: AppRole | null): string {
+  switch (role) {
+    case "op_manager":
+      return "/app/producao";
+    case "sales_manager":
+      return "/app/vendas";
+    case "seller":
+      return "/app/vendas";
+    case "admin":
+    default:
+      return "/app";
+  }
 }
