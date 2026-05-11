@@ -61,7 +61,12 @@ async function hydrate(userId: string | null, email: string | null) {
     .eq("user_id", userId)
     .limit(1);
 
-  const org = (profile?.organizations as { name: string; plan: string; trial_ends_at: string } | null) ?? null;
+  const orgRaw = profile?.organizations as
+    | { name: string; plan: string; trial_ends_at: string }
+    | { name: string; plan: string; trial_ends_at: string }[]
+    | null
+    | undefined;
+  const org = Array.isArray(orgRaw) ? (orgRaw[0] ?? null) : (orgRaw ?? null);
   const trialEndsAt = org?.trial_ends_at ? new Date(org.trial_ends_at).getTime() : null;
   const onboarded = typeof window !== "undefined" && window.localStorage.getItem(ONB_KEY) === "1";
 
