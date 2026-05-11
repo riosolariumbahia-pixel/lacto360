@@ -41,7 +41,14 @@ function ConfigPage() {
             <h3 className="text-sm font-semibold">Plano {session.plan === "pro" ? "Pro" : "Trial"}</h3>
           </div>
           {session.plan === "pro" ? (
-            <p className="mt-2 text-sm text-muted-foreground">Você está no plano Pro. Aproveite todos os recursos.</p>
+            <>
+              <p className="mt-2 text-sm text-muted-foreground">Você está no plano Pro. Aproveite todos os recursos.</p>
+              <div className="mt-5">
+                <Button variant="outline" onClick={async () => { await sessionApi.signOut(); navigate({ to: "/" }); }}>
+                  Sair
+                </Button>
+              </div>
+            </>
           ) : (
             <>
               <p className="mt-2 font-serif text-3xl">{days} <span className="text-base text-muted-foreground">dias restantes</span></p>
@@ -52,10 +59,10 @@ function ConfigPage() {
                 ))}
               </ul>
               <div className="mt-5 flex flex-wrap gap-2">
-                <Button className="bg-gradient-gold text-gold-foreground" onClick={() => { sessionApi.upgrade(); toast.success("Bem-vindo ao Pro!"); }}>
+                <Button className="bg-gradient-gold text-gold-foreground" onClick={async () => { await sessionApi.upgrade(); toast.success("Bem-vindo ao Pro!"); }}>
                   Fazer upgrade — R$ 97/mês
                 </Button>
-                <Button variant="outline" onClick={() => { sessionApi.signOut(); navigate({ to: "/" }); }}>
+                <Button variant="outline" onClick={async () => { await sessionApi.signOut(); navigate({ to: "/" }); }}>
                   Sair
                 </Button>
               </div>

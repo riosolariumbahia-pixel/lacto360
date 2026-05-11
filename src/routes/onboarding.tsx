@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,10 @@ function OnboardingPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [meta, setMeta] = useState("50000");
+
+  useEffect(() => {
+    if (session.ready && !session.user) navigate({ to: "/login" });
+  }, [session.ready, session.user, navigate]);
 
   function finish() {
     sessionApi.setOnboarded(true);
