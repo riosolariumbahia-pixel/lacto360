@@ -52,10 +52,10 @@ function ConfigPage() {
                 ))}
               </ul>
               <div className="mt-5 flex flex-wrap gap-2">
-                <Button className="bg-gradient-gold text-gold-foreground" onClick={() => { sessionApi.upgrade(); toast.success("Bem-vindo ao Pro!"); }}>
+                <Button className="bg-gradient-gold text-gold-foreground" onClick={async () => { await sessionApi.upgrade(); toast.success("Bem-vindo ao Pro!"); }}>
                   Fazer upgrade — R$ 97/mês
                 </Button>
-                <Button variant="outline" onClick={() => { sessionApi.signOut(); navigate({ to: "/" }); }}>
+                <Button variant="outline" onClick={async () => { await sessionApi.signOut(); navigate({ to: "/" }); }}>
                   Sair
                 </Button>
               </div>
