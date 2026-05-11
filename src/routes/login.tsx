@@ -5,17 +5,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles } from "lucide-react";
 import { sessionApi } from "@/lib/session";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({ component: LoginPage });
 
 function LoginPage() {
-  const [email, setEmail] = useState("demo@laticinio.com");
-  const [pw, setPw] = useState("demo1234");
+  const [email, setEmail] = useState("");
+  const [pw, setPw] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    sessionApi.signIn(email);
+    setLoading(true);
+    const error = await sessionApi.signIn(email, pw);
+    setLoading(false);
+    if (error) {
+      toast.error(error.message === "Invalid login credentials" ? "E-mail ou senha incorretos." : error.message);
+      return;
+    }
     sessionApi.setOnboarded(true);
     navigate({ to: "/app" });
   }
@@ -46,8 +54,13 @@ function LoginPage() {
           <div className="space-y-3">
             <div><Label>E-mail</Label><Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></div>
             <div><Label>Senha</Label><Input type="password" value={pw} onChange={(e) => setPw(e.target.value)} required /></div>
+            <Link to="/reset-password" className="block text-right text-xs text-muted-foreground hover:text-foreground">
+              Esqueci minha senha
+            </Link>
           </div>
-          <Button type="submit" className="w-full bg-gradient-primary">Entrar</Button>
+          <Button type="submit" disabled={loading} className="w-full bg-gradient-primary">
+            {loading ? "Entrando..." : "Entrar"}
+          </Button>
           <p className="text-center text-sm text-muted-foreground">
             Não tem conta? <Link to="/cadastro" className="font-semibold text-primary">Comece grátis</Link>
           </p>
