@@ -14,6 +14,116 @@ export type Database = {
   }
   public: {
     Tables: {
+      inventory_items: {
+        Row: {
+          category: string
+          cost_price: number
+          created_at: string
+          id: string
+          is_active: boolean
+          min_stock: number
+          name: string
+          org_id: string
+          sale_price: number
+          sku: string | null
+          stock_qty: number
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          cost_price?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          min_stock?: number
+          name: string
+          org_id: string
+          sale_price?: number
+          sku?: string | null
+          stock_qty?: number
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          cost_price?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          min_stock?: number
+          name?: string
+          org_id?: string
+          sale_price?: number
+          sku?: string | null
+          stock_qty?: number
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          item_id: string
+          movement_type: string
+          notes: string | null
+          org_id: string
+          quantity: number
+          reference: string | null
+          unit_cost: number | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id: string
+          movement_type: string
+          notes?: string | null
+          org_id: string
+          quantity: number
+          reference?: string | null
+          unit_cost?: number | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id?: string
+          movement_type?: string
+          notes?: string | null
+          org_id?: string
+          quantity?: number
+          reference?: string | null
+          unit_cost?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           accepted_at: string | null
@@ -87,6 +197,135 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      production_butter: {
+        Row: {
+          butter_kg: number
+          created_at: string
+          created_by: string | null
+          id: string
+          loss_kg: number
+          milk_liters: number
+          notes: string | null
+          org_id: string
+          output_item_id: string | null
+          produced_at: string
+          total_cost: number
+          updated_at: string
+          yield_percent: number | null
+        }
+        Insert: {
+          butter_kg?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          loss_kg?: number
+          milk_liters?: number
+          notes?: string | null
+          org_id: string
+          output_item_id?: string | null
+          produced_at?: string
+          total_cost?: number
+          updated_at?: string
+          yield_percent?: number | null
+        }
+        Update: {
+          butter_kg?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          loss_kg?: number
+          milk_liters?: number
+          notes?: string | null
+          org_id?: string
+          output_item_id?: string | null
+          produced_at?: string
+          total_cost?: number
+          updated_at?: string
+          yield_percent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_butter_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_butter_output_item_id_fkey"
+            columns: ["output_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      production_cheese: {
+        Row: {
+          cheese_kg: number
+          created_at: string
+          created_by: string | null
+          id: string
+          loss_kg: number
+          milk_liters: number
+          notes: string | null
+          org_id: string
+          output_item_id: string | null
+          pieces: number
+          produced_at: string
+          total_cost: number
+          updated_at: string
+          yield_percent: number | null
+        }
+        Insert: {
+          cheese_kg?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          loss_kg?: number
+          milk_liters?: number
+          notes?: string | null
+          org_id: string
+          output_item_id?: string | null
+          pieces?: number
+          produced_at?: string
+          total_cost?: number
+          updated_at?: string
+          yield_percent?: number | null
+        }
+        Update: {
+          cheese_kg?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          loss_kg?: number
+          milk_liters?: number
+          notes?: string | null
+          org_id?: string
+          output_item_id?: string | null
+          pieces?: number
+          produced_at?: string
+          total_cost?: number
+          updated_at?: string
+          yield_percent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_cheese_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_cheese_output_item_id_fkey"
+            columns: ["output_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
