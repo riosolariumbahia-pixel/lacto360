@@ -254,7 +254,7 @@ function MovementDialog({ orgId, item, kind }: { orgId: string; item: InventoryI
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant={kind === "in" ? "default" : "outline"} className={cn("flex-1", kind === "in" && "bg-success text-success-foreground hover:bg-success/90")}>
+        <Button size="sm" variant={kind === "in" ? "default" : "outline"} className={cn("flex-1", kind === "in" && "bg-success text-white hover:bg-success/90")}>
           {kind === "in" ? <ArrowDownToLine className="mr-1 size-3.5" /> : <ArrowUpFromLine className="mr-1 size-3.5" />}
           {kind === "in" ? "Entrada" : "Saída"}
         </Button>
