@@ -22,6 +22,7 @@ import { Route as AppProducaoRouteImport } from './routes/app.producao'
 import { Route as AppFinanceiroRouteImport } from './routes/app.financeiro'
 import { Route as AppEstoqueRouteImport } from './routes/app.estoque'
 import { Route as AppConfiguracoesRouteImport } from './routes/app.configuracoes'
+import { Route as AppComercialRouteImport } from './routes/app.comercial'
 import { Route as AppClientesRouteImport } from './routes/app.clientes'
 import { Route as AppAssistenteRouteImport } from './routes/app.assistente'
 
@@ -90,6 +91,11 @@ const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
   path: '/configuracoes',
   getParentRoute: () => AppRoute,
 } as any)
+const AppComercialRoute = AppComercialRouteImport.update({
+  id: '/comercial',
+  path: '/comercial',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppClientesRoute = AppClientesRouteImport.update({
   id: '/clientes',
   path: '/clientes',
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/app/assistente': typeof AppAssistenteRoute
   '/app/clientes': typeof AppClientesRoute
+  '/app/comercial': typeof AppComercialRoute
   '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/estoque': typeof AppEstoqueRoute
   '/app/financeiro': typeof AppFinanceiroRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/app/assistente': typeof AppAssistenteRoute
   '/app/clientes': typeof AppClientesRoute
+  '/app/comercial': typeof AppComercialRoute
   '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/estoque': typeof AppEstoqueRoute
   '/app/financeiro': typeof AppFinanceiroRoute
@@ -144,6 +152,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/app/assistente': typeof AppAssistenteRoute
   '/app/clientes': typeof AppClientesRoute
+  '/app/comercial': typeof AppComercialRoute
   '/app/configuracoes': typeof AppConfiguracoesRoute
   '/app/estoque': typeof AppEstoqueRoute
   '/app/financeiro': typeof AppFinanceiroRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/app/assistente'
     | '/app/clientes'
+    | '/app/comercial'
     | '/app/configuracoes'
     | '/app/estoque'
     | '/app/financeiro'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/app/assistente'
     | '/app/clientes'
+    | '/app/comercial'
     | '/app/configuracoes'
     | '/app/estoque'
     | '/app/financeiro'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/app/assistente'
     | '/app/clientes'
+    | '/app/comercial'
     | '/app/configuracoes'
     | '/app/estoque'
     | '/app/financeiro'
@@ -307,6 +319,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppConfiguracoesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/comercial': {
+      id: '/app/comercial'
+      path: '/comercial'
+      fullPath: '/app/comercial'
+      preLoaderRoute: typeof AppComercialRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/clientes': {
       id: '/app/clientes'
       path: '/clientes'
@@ -327,6 +346,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAssistenteRoute: typeof AppAssistenteRoute
   AppClientesRoute: typeof AppClientesRoute
+  AppComercialRoute: typeof AppComercialRoute
   AppConfiguracoesRoute: typeof AppConfiguracoesRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
@@ -339,6 +359,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAssistenteRoute: AppAssistenteRoute,
   AppClientesRoute: AppClientesRoute,
+  AppComercialRoute: AppComercialRoute,
   AppConfiguracoesRoute: AppConfiguracoesRoute,
   AppEstoqueRoute: AppEstoqueRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
@@ -361,3 +382,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
