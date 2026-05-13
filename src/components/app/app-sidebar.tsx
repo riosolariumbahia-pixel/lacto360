@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  BarChart3, Boxes, Brain, Factory, LayoutDashboard, LineChart,
+  BarChart3, Boxes, Brain, Factory, LayoutDashboard, LineChart, Target,
   Settings, ShoppingCart, Users, Wallet, Sparkles,
 } from "lucide-react";
 import {
@@ -25,6 +25,7 @@ const groups = [
       { title: "Estoque", url: "/app/estoque", icon: Boxes },
       { title: "Vendas", url: "/app/vendas", icon: ShoppingCart },
       { title: "Clientes", url: "/app/clientes", icon: Users },
+      { title: "Comercial", url: "/app/comercial", icon: Target },
     ],
   },
   {
