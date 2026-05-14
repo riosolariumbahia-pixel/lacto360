@@ -83,7 +83,7 @@ function FinanceiroPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <KpiCard label="A receber em aberto" value={kpis.openReceivable} format={fmtBRL} icon={ArrowDownToLine} tone="info" />
         <KpiCard label="A pagar em aberto" value={kpis.openPayable} format={fmtBRL} icon={ArrowUpFromLine} tone="warning" />
-        <KpiCard label="Vencidos" value={kpis.overdue} format={fmtBRL} icon={AlertCircle} tone="danger" />
+        <KpiCard label="Vencidos" value={kpis.overdue} format={fmtBRL} icon={AlertCircle} tone="warning" />
       </div>
 
       {loading ? (
