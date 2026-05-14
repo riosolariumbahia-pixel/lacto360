@@ -1,103 +1,92 @@
-# Fase 2 — Módulo Comercial
+# Fase 3 — Financeiro
 
-Backend real (Lovable Cloud) + UI conectada para Clientes, Pedidos, Metas e Comissões, respeitando RLS multi-tenant e papéis (admin, op_manager, sales_manager, seller).
+Transforma `app.financeiro.tsx` (hoje só mock) em módulo real integrado ao Supabase, com contas a receber geradas automaticamente a partir de pedidos confirmados e contas a pagar/despesas manuais.
 
 ## Escopo
 
-1. **Clientes (CRM básico)** — cadastro, edição, status (ativo/inativo), histórico de pedidos.
-2. **Pedidos de venda** — criação multi-item, vínculo a cliente e vendedor, status (rascunho, confirmado, em rota, entregue, cancelado), baixa automática de estoque ao confirmar.
-3. **Metas** — meta mensal por vendedor (kg e/ou R$), progresso calculado a partir dos pedidos.
-4. **Comissões** — % por vendedor, cálculo automático sobre pedidos entregues no período.
+**Dentro:**
+- Categorias financeiras (receita/despesa)
+- Contas a pagar / a receber (`finance_entries`)
+- Geração automática de contas a receber quando pedido é confirmado
+- Registro de pagamentos (baixa total/parcial)
+- Dashboard: faturamento real, lucro, margem, DRE simplificado
+- Fluxo de caixa (realizado + previsto) por mês
+- Relatório de despesas por categoria
 
-## Banco de dados (migração única)
+**Fora (fases futuras):**
+- Conciliação bancária / OFX
+- Boletos / PIX automatizado
+- Centro de custos múltiplo
+- Notas fiscais
+
+## Banco de dados
 
 ```text
-customers
-  id, org_id, name, doc (CPF/CNPJ), email, phone,
-  city, state, status ('ativo'|'inativo'),
-  credit_limit, payment_terms, notes
-  -- índice: (org_id), (org_id, status)
+finance_categories
+  id, org_id, name, kind ('receita'|'despesa'), color, is_active
 
-sales_orders
-  id, org_id, code (auto), customer_id, seller_id,
-  status ('rascunho'|'confirmado'|'em_rota'|'entregue'|'cancelado'),
-  channel ('balcao'|'rota'|'whatsapp'|'distribuidor'),
-  subtotal, discount, total, notes,
-  ordered_at, delivered_at
+finance_entries
+  id, org_id, kind ('receivable'|'payable'),
+  category_id, customer_id?, order_id?, supplier_name?,
+  description, amount, due_date, status ('pendente'|'pago'|'parcial'|'cancelado'),
+  paid_amount (default 0), paid_at?, payment_method?, notes,
+  created_by, created_at, updated_at
 
-sales_order_items
-  id, order_id, item_id (FK inventory_items),
-  quantity, unit_price, total
-
-sales_targets
-  id, org_id, seller_id, period (date - 1º dia do mês),
-  target_kg, target_brl
-  -- unique (org_id, seller_id, period)
-
-sales_commissions
-  id, org_id, seller_id,
-  commission_percent  -- vigente
-  -- unique (org_id, seller_id)
+finance_payments
+  id, org_id, entry_id, amount, paid_at, method, notes, created_by
 ```
 
-### Triggers
-- `tg_sales_order_total`: recalcula `subtotal/total` ao inserir/alterar `sales_order_items`.
-- `tg_sales_order_stock`: ao mudar `status` para `confirmado`, gera `inventory_movements` tipo `out` para cada item; ao `cancelado` (vindo de confirmado+), reverte.
-- `tg_set_updated_at` nas tabelas com `updated_at`.
+**Triggers:**
+- `tg_order_to_receivable`: quando `sales_orders.status` muda `rascunho → confirmado`, cria `finance_entries (receivable)` com `amount = total`, `due_date = ordered_at + 30d`. Cancelar pedido marca a entrada como `cancelado`.
+- `tg_apply_payment`: ao inserir em `finance_payments`, soma em `paid_amount`; se `>= amount` marca `pago` + `paid_at`, senão `parcial`.
+- `tg_set_updated_at` nas duas tabelas.
 
-### RLS (padrão da Fase 1)
-- **customers / sales_targets / sales_commissions**:
-  - SELECT: membros da org.
-  - ALL: admin OR sales_manager.
-- **sales_orders / sales_order_items**:
-  - SELECT: admin/sales_manager veem tudo da org; seller vê apenas `seller_id = auth.uid()`.
-  - INSERT/UPDATE: admin, sales_manager, ou seller (apenas próprios pedidos).
-  - DELETE: admin.
-- Helper já existe: `has_role(user, org, role)` + `current_org_id()`.
+**RLS:**
+- `members read` para todos da org (leitura)
+- `finance manage` (insert/update/delete) só para `admin` e novo papel `finance_manager`
+- Atualizar enum `app_role` adicionando `finance_manager` (se não existir)
 
-## Camada de dados frontend
+**Índices:** `(org_id, due_date)`, `(org_id, status)`, `(order_id)`.
 
-`src/lib/commercial.ts` (espelha `operations.ts`):
-- `useCustomers()`, `useCreateCustomer()`, `useUpdateCustomer()`
-- `useSalesOrders(filters)`, `useCreateOrder()`, `useUpdateOrderStatus()`
-- `useSellers()` (lista profiles com role seller/sales_manager via `user_roles` join)
-- `useTargets(period)`, `useUpsertTarget()`
-- `useCommissions()`, `useUpsertCommission()`
-- KPIs derivados (faturamento mês, ticket médio, top clientes) via `useQuery` com agregação client-side.
+## Camada de dados
 
-## UI — páginas atualizadas
+`src/lib/finance.ts` com TanStack Query:
+- `useCategories`, `useCreateCategory`
+- `useEntries({ kind?, status?, from?, to? })`
+- `useCreateEntry`, `useUpdateEntry`, `useCancelEntry`
+- `useRegisterPayment`
+- `useFinanceKPIs(periodMonths)` — faturamento, despesas, lucro, margem, em aberto a receber/pagar, vencidos
+- `useCashFlow(months)` — agregação mensal realizado/previsto
+- `useExpensesByCategory(period)`
 
-**`app.clientes.tsx`** (real)
-- KPIs: total, ativos no mês, ticket médio.
-- Tabela com busca + filtro status.
-- Diálogos: novo cliente / editar cliente.
-- Drawer lateral: histórico dos últimos pedidos do cliente selecionado.
+## Frontend
 
-**`app.vendas.tsx`** (real)
-- KPIs: pedidos do mês, faturamento, ticket médio, manteiga/queijo (kg) vendidos.
-- Tabela de pedidos com filtros (status, vendedor, período).
-- Diálogo "Novo pedido": cliente + vendedor + linhas (item, qtd, preço) com cálculo em tempo real, botão "Salvar rascunho" / "Confirmar".
-- Ações por linha: confirmar, marcar em rota, entregue, cancelar.
-- Pizza de canais a partir de dados reais.
+**`src/routes/app.financeiro.tsx` (reescrita):**
+Tabs:
+1. **Visão Geral** — KPIs (faturamento, despesa, lucro, margem, a receber, a pagar, vencidos), gráfico Receita × Despesa × Lucro (AreaChart), fluxo previsto vs realizado.
+2. **A Receber** — tabela filtrável (pendente/vencido/pago), badge de status, ação "Registrar pagamento" (dialog), origem (pedido vinculado).
+3. **A Pagar** — tabela + botão "Nova despesa" (dialog: categoria, fornecedor, descrição, valor, vencimento), ação "Pagar".
+4. **Categorias** — CRUD simples (nome, tipo, cor).
+5. **Relatórios** — donut despesas por categoria, ranking top 10 despesas do mês.
 
-**Nova página `app.comercial.tsx`** (Metas & Comissões — visível para admin/sales_manager)
-- Aba Metas: lista vendedores × meta do mês (kg, R$) × progresso (barra) × atingimento.
-- Aba Comissões: % por vendedor + cálculo do período (faturamento entregue × %).
-- Adicionar entrada na sidebar entre "Vendas" e "Financeiro".
+**Permissões UI:** `seller` e `op_manager` veem apenas Visão Geral (read-only); botões de criar/pagar só para `admin` / `finance_manager` via `useCurrentRole()`.
 
-## Permissões na UI
-- Helper `useCurrentRole()` (já temos sessão); ocultar botões "Novo cliente / Confirmar pedido / Editar metas" para `seller`.
-- Seller na página de Vendas vê só seus pedidos (RLS já garante; UI só esconde filtro de vendedor).
+**Sidebar:** entrada "Financeiro" já existe — sem mudança.
 
-## Fora de escopo (próximas fases)
-- Notas fiscais / impressão de pedido.
-- Rotas de entrega geolocalizadas.
-- Integração financeira (contas a receber) — Fase 3.
-- Comissão por faixa/produto (só % flat agora).
+## Onboarding seed
+Inserir categorias padrão na criação da org via `handle_new_user` ou trigger `after insert on organizations`:
+- Receitas: Vendas, Outras receitas
+- Despesas: Matéria-prima (leite), Embalagens, Energia, Salários, Transporte, Impostos, Outros
 
-## Roadmap após esta fase
-- **Fase 3** — Financeiro (contas a pagar/receber, fluxo de caixa, vínculo com pedidos).
-- **Fase 4** — Relatórios consolidados + IA (insights via Lovable AI Gateway).
-- **Fase 5** — Onboarding produtivo + convites de membros funcionais.
+## Arquivos
+- `supabase/migrations/<ts>_finance.sql` (tabelas + enum + RLS + triggers + seed function)
+- `src/lib/finance.ts` (novo)
+- `src/routes/app.financeiro.tsx` (reescrita)
+- `src/integrations/supabase/types.ts` (auto-gerado)
 
-Confirmar com **"implementar"** para eu rodar a migração e construir a Fase 2.
+## Roadmap restante
+- **Fase 4** — Relatórios consolidados + IA (insights via Lovable AI: previsão de caixa, alertas de margem, sugestões de preço).
+- **Fase 5** — Onboarding guiado + convites de equipe (`invitations` já existe, falta UI).
+- **Fase 6** — Polimento, billing/trial, landing page.
+
+Aprovar para eu executar a migração e implementar o módulo.
