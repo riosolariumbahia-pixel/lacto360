@@ -44,7 +44,7 @@ function RelPage() {
       <PageHeader
         title="Relatórios"
         subtitle="Visão consolidada do desempenho"
-        actions={
+        action={
           <div className="flex items-center gap-2">
             <Select value={String(period)} onValueChange={(v) => setPeriod(Number(v) as Period)}>
               <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
