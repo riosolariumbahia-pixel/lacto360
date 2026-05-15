@@ -1,92 +1,79 @@
-# Fase 3 — Financeiro
+# Fase 4 — Relatórios Consolidados & Assistente IA
 
-Transforma `app.financeiro.tsx` (hoje só mock) em módulo real integrado ao Supabase, com contas a receber geradas automaticamente a partir de pedidos confirmados e contas a pagar/despesas manuais.
+Transforma `app.relatorios.tsx` (hoje só mock) em dashboard executivo real, e `app.assistente.tsx` em chat IA conectado aos dados da org via Lovable AI Gateway.
 
 ## Escopo
 
 **Dentro:**
-- Categorias financeiras (receita/despesa)
-- Contas a pagar / a receber (`finance_entries`)
-- Geração automática de contas a receber quando pedido é confirmado
-- Registro de pagamentos (baixa total/parcial)
-- Dashboard: faturamento real, lucro, margem, DRE simplificado
-- Fluxo de caixa (realizado + previsto) por mês
-- Relatório de despesas por categoria
+- Dashboard consolidado com dados reais de Produção, Comercial e Financeiro
+- Filtro de período (7d / 30d / 90d / 12m) global na página
+- KPIs estratégicos: faturamento, lucro bruto, margem, rendimento médio, ticket médio, clientes ativos
+- Gráficos: evolução receita x despesa x lucro, rendimento de produção, mix de canais real, top clientes, top produtos
+- Exportação CSV dos dados do período
+- Assistente IA conversacional com contexto dos dados da org (resumo automático injetado no system prompt)
+- Botão "Gerar insights agora" — análise proativa que retorna 3-5 cards (alertas de margem, oportunidades, riscos)
 
-**Fora (fases futuras):**
-- Conciliação bancária / OFX
-- Boletos / PIX automatizado
-- Centro de custos múltiplo
-- Notas fiscais
+**Fora (futuras):**
+- Previsão de caixa por ML
+- Exportação PDF formatada
+- Agendamento de relatórios por email
+- Comparativo entre filiais
 
-## Banco de dados
+## Backend
 
-```text
-finance_categories
-  id, org_id, name, kind ('receita'|'despesa'), color, is_active
+### Server function — Lovable AI
+`src/lib/ai.functions.ts` (createServerFn, protegida por `requireSupabaseAuth`):
 
-finance_entries
-  id, org_id, kind ('receivable'|'payable'),
-  category_id, customer_id?, order_id?, supplier_name?,
-  description, amount, due_date, status ('pendente'|'pago'|'parcial'|'cancelado'),
-  paid_amount (default 0), paid_at?, payment_method?, notes,
-  created_by, created_at, updated_at
+- `chatWithAssistant({ messages })` — chama `https://ai.gateway.lovable.dev/v1/chat/completions` com `LOVABLE_API_KEY` (já existe em secrets), modelo `google/gemini-2.5-flash`. Antes de chamar, busca um snapshot do contexto da org (KPIs últimos 30d, top 5 clientes, top 5 produtos, contas vencidas) e injeta como system message. Retorna `{ content }`.
+- `generateInsights()` — mesmo contexto, mas com `response_format: json_object` e schema fixo: `{ insights: [{ title, text, tone: 'success'|'warning'|'info', icon }] }`. Retorna 3-5 itens.
+- Tratamento: 429 → "Limite atingido, tente em instantes"; 402 → "Créditos esgotados".
 
-finance_payments
-  id, org_id, entry_id, amount, paid_at, method, notes, created_by
-```
+Sem nova tabela. Histórico do chat fica só em memória da sessão (estado local do componente).
 
-**Triggers:**
-- `tg_order_to_receivable`: quando `sales_orders.status` muda `rascunho → confirmado`, cria `finance_entries (receivable)` com `amount = total`, `due_date = ordered_at + 30d`. Cancelar pedido marca a entrada como `cancelado`.
-- `tg_apply_payment`: ao inserir em `finance_payments`, soma em `paid_amount`; se `>= amount` marca `pago` + `paid_at`, senão `parcial`.
-- `tg_set_updated_at` nas duas tabelas.
-
-**RLS:**
-- `members read` para todos da org (leitura)
-- `finance manage` (insert/update/delete) só para `admin` e novo papel `finance_manager`
-- Atualizar enum `app_role` adicionando `finance_manager` (se não existir)
-
-**Índices:** `(org_id, due_date)`, `(org_id, status)`, `(order_id)`.
+`src/start.ts` — confirmar `attachSupabaseAuth` registrado (já está).
 
 ## Camada de dados
 
-`src/lib/finance.ts` com TanStack Query:
-- `useCategories`, `useCreateCategory`
-- `useEntries({ kind?, status?, from?, to? })`
-- `useCreateEntry`, `useUpdateEntry`, `useCancelEntry`
-- `useRegisterPayment`
-- `useFinanceKPIs(periodMonths)` — faturamento, despesas, lucro, margem, em aberto a receber/pagar, vencidos
-- `useCashFlow(months)` — agregação mensal realizado/previsto
-- `useExpensesByCategory(period)`
+`src/lib/reports.ts` (TanStack Query):
+- `useExecutiveKPIs(period)` — agrega `sales_orders`, `finance_entries`, `production_*` no client (já temos os hooks; aqui faz cross-join)
+- `useRevenueVsExpense(period)` — série mensal a partir de `finance_entries`
+- `useProductionYield(period)` — média de `yield_percent` por dia/semana
+- `useTopCustomers(period, limit)` / `useTopProducts(period, limit)` — agregação de `sales_order_items` join `sales_orders`
+- `useChannelMix(period)` — `sales_orders` agrupado por `channel`
+- `exportReportCSV(period)` — função pura, gera CSV com pedidos + lançamentos do período e dispara download
 
 ## Frontend
 
-**`src/routes/app.financeiro.tsx` (reescrita):**
-Tabs:
-1. **Visão Geral** — KPIs (faturamento, despesa, lucro, margem, a receber, a pagar, vencidos), gráfico Receita × Despesa × Lucro (AreaChart), fluxo previsto vs realizado.
-2. **A Receber** — tabela filtrável (pendente/vencido/pago), badge de status, ação "Registrar pagamento" (dialog), origem (pedido vinculado).
-3. **A Pagar** — tabela + botão "Nova despesa" (dialog: categoria, fornecedor, descrição, valor, vencimento), ação "Pagar".
-4. **Categorias** — CRUD simples (nome, tipo, cor).
-5. **Relatórios** — donut despesas por categoria, ranking top 10 despesas do mês.
+### `src/routes/app.relatorios.tsx` (reescrita)
+- `<PageHeader>` com `<Select>` de período (7/30/90/365 dias) + botão "Exportar CSV"
+- Grid de 6 KPIs (KpiCard existente)
+- 4 gráficos: AreaChart (receita/despesa/lucro), LineChart (rendimento), PieChart (canais reais), BarChart horizontal (top 10 clientes)
+- Card "Top produtos" — tabela compacta
 
-**Permissões UI:** `seller` e `op_manager` veem apenas Visão Geral (read-only); botões de criar/pagar só para `admin` / `finance_manager` via `useCurrentRole()`.
+### `src/routes/app.assistente.tsx` (reescrita)
+- Layout chat: lista de mensagens (user/assistant) com `react-markdown` para render do assistente
+- Input com `Textarea` + botão Enviar (Enter envia, Shift+Enter quebra linha)
+- `useMutation` chamando `chatWithAssistant`; histórico completo enviado a cada turn
+- Sidebar direita: botão "Gerar insights" → chama `generateInsights`, renderiza `<AiInsightCard>` (já existe) com os resultados
+- Estado de loading (spinner inline na bolha) e tratamento de erro com toast
+- Mensagem inicial do assistente: "Olá! Sou seu copiloto de gestão. Pergunte sobre vendas, estoque, margem ou peça uma análise."
 
-**Sidebar:** entrada "Financeiro" já existe — sem mudança.
+### Permissões UI
+- Relatórios: visível para todos os papéis (read-only)
+- Assistente: idem; sem restrição
 
-## Onboarding seed
-Inserir categorias padrão na criação da org via `handle_new_user` ou trigger `after insert on organizations`:
-- Receitas: Vendas, Outras receitas
-- Despesas: Matéria-prima (leite), Embalagens, Energia, Salários, Transporte, Impostos, Outros
+## Dependências
+- `bun add react-markdown` (assistente)
+- Sem novas migrações.
 
 ## Arquivos
-- `supabase/migrations/<ts>_finance.sql` (tabelas + enum + RLS + triggers + seed function)
-- `src/lib/finance.ts` (novo)
-- `src/routes/app.financeiro.tsx` (reescrita)
-- `src/integrations/supabase/types.ts` (auto-gerado)
+- `src/lib/ai.functions.ts` (novo, server)
+- `src/lib/reports.ts` (novo)
+- `src/routes/app.relatorios.tsx` (reescrita real)
+- `src/routes/app.assistente.tsx` (reescrita real)
 
 ## Roadmap restante
-- **Fase 4** — Relatórios consolidados + IA (insights via Lovable AI: previsão de caixa, alertas de margem, sugestões de preço).
-- **Fase 5** — Onboarding guiado + convites de equipe (`invitations` já existe, falta UI).
-- **Fase 6** — Polimento, billing/trial, landing page.
+- **Fase 5** — Onboarding guiado + convites de equipe (`invitations` já existe)
+- **Fase 6** — Polimento, billing/trial, landing page
 
-Aprovar para eu executar a migração e implementar o módulo.
+Aprovar para executar.
