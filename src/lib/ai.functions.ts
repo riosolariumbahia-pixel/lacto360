@@ -37,16 +37,16 @@ async function buildOrgContext(supabase: any, userId: string): Promise<string> {
   const ch = cheese.data ?? [];
   const cust = customers.data ?? [];
 
-  const sum = (a: any[], k: string) => a.reduce((s, r) => s + Number(r[k] ?? 0), 0);
+  const sum = (a: any[], k: string) => a.reduce((s: number, r: any) => s + Number(r[k] ?? 0), 0);
   const validOrders = ord.filter((o: any) => o.status !== "cancelado");
   const faturamento = sum(validOrders, "total");
   const receivables = ent.filter((e: any) => e.kind === "receivable" && e.status !== "cancelado");
   const payables = ent.filter((e: any) => e.kind === "payable" && e.status !== "cancelado");
-  const aReceber = receivables.reduce((s, e: any) => s + (Number(e.amount) - Number(e.paid_amount)), 0);
-  const aPagar = payables.reduce((s, e: any) => s + (Number(e.amount) - Number(e.paid_amount)), 0);
+  const aReceber = receivables.reduce((s: number, e: any) => s + (Number(e.amount) - Number(e.paid_amount)), 0);
+  const aPagar = payables.reduce((s: number, e: any) => s + (Number(e.amount) - Number(e.paid_amount)), 0);
   const today = new Date().toISOString().slice(0, 10);
   const vencidos = [...receivables, ...payables].filter((e: any) => e.status !== "pago" && e.due_date < today).length;
-  const despesas = payables.reduce((s, e: any) => s + Number(e.paid_amount), 0);
+  const despesas = payables.reduce((s: number, e: any) => s + Number(e.paid_amount), 0);
   const lucro = faturamento - despesas;
   const margem = faturamento > 0 ? (lucro / faturamento) * 100 : 0;
 
