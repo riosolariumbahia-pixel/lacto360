@@ -1,51 +1,67 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Brain, Send, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Brain, Send, Sparkles, Wand2 } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import { toast } from "sonner";
+
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { PageHeader } from "@/components/app/page-header";
-import { aiInsights, fmtBRL, kpis } from "@/lib/mock-data";
 import { AiInsightCard } from "@/components/app/ai-insight-card";
 import { cn } from "@/lib/utils";
+import { chatWithAssistant, generateInsights } from "@/lib/ai.functions";
 
 export const Route = createFileRoute("/app/assistente")({ component: AssistentePage });
 
-type Msg = { id: number; role: "user" | "ai"; text: string };
+type Msg = { id: number; role: "user" | "assistant"; content: string };
+type Insight = { id: number; title: string; text: string; tone: "success" | "warning" | "info"; icon: "trend" | "alert" | "users" | "target" };
 
 const suggestions = [
-  "Quanto produzi essa semana?",
-  "Qual cliente está sumido?",
+  "Quanto faturei nos últimos 30 dias?",
+  "Qual canal vende mais?",
   "Como está minha margem?",
-  "Estou perto da meta?",
+  "Há contas vencidas?",
 ];
-
-function answer(q: string): string {
-  const t = q.toLowerCase();
-  if (t.includes("produzi") || t.includes("produção")) return `Você produziu ${kpis.manteigaKg} kg de manteiga este mês — alta de ${kpis.manteigaDelta}% vs mês anterior.`;
-  if (t.includes("cliente") && (t.includes("sum") || t.includes("inativ"))) return "A Mercearia do João está há 12 dias sem comprar. Sugiro um contato hoje — ticket médio de R$ 1.200.";
-  if (t.includes("margem")) return `Sua margem média está em 73,2%. O lote L-2026-088 teve a melhor margem (78,8%).`;
-  if (t.includes("meta")) return `Você está em 87% da meta de faturamento de Maio (${fmtBRL(kpis.faturamentoMes)} / ${fmtBRL(54000)}).`;
-  if (t.includes("estoque") || t.includes("emba")) return "Embalagens 200g abaixo do mínimo (120 un, mín. 500). Reposição recomendada nas próximas 36h.";
-  return "Posso te ajudar com produção, estoque, vendas, clientes e financeiro. Tente: 'Quanto produzi essa semana?'";
-}
 
 function AssistentePage() {
   const [msgs, setMsgs] = useState<Msg[]>([
-    { id: 1, role: "ai", text: "Olá! Sou o Assistente 360 IA do seu laticínio. Posso analisar produção, estoque, vendas e financeiro. O que você quer saber?" },
+    { id: 1, role: "assistant", content: "Olá! Sou seu copiloto de gestão. Pergunte sobre vendas, estoque, margem ou peça uma análise." },
   ]);
   const [input, setInput] = useState("");
-  const [typing, setTyping] = useState(false);
+  const [insights, setInsights] = useState<Insight[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const chatFn = useServerFn(chatWithAssistant);
+  const insightsFn = useServerFn(generateInsights);
+
+  const chat = useMutation({
+    mutationFn: (history: Msg[]) =>
+      chatFn({ data: { messages: history.map((m) => ({ role: m.role, content: m.content })) } }),
+    onSuccess: (res) => {
+      setMsgs((m) => [...m, { id: Date.now(), role: "assistant", content: res.content || "(sem resposta)" }]);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Falha ao consultar IA"),
+  });
+
+  const insightsM = useMutation({
+    mutationFn: () => insightsFn({}),
+    onSuccess: (res) => setInsights(res.insights as Insight[]),
+    onError: (e: any) => toast.error(e?.message ?? "Falha ao gerar insights"),
+  });
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [msgs, chat.isPending]);
 
   function send(text: string) {
-    if (!text.trim()) return;
-    const userMsg: Msg = { id: Date.now(), role: "user", text };
-    setMsgs((m) => [...m, userMsg]);
+    const trimmed = text.trim();
+    if (!trimmed || chat.isPending) return;
+    const next: Msg[] = [...msgs, { id: Date.now(), role: "user", content: trimmed }];
+    setMsgs(next);
     setInput("");
-    setTyping(true);
-    setTimeout(() => {
-      setMsgs((m) => [...m, { id: Date.now() + 1, role: "ai", text: answer(text) }]);
-      setTyping(false);
-    }, 700);
+    chat.mutate(next.filter((m) => m.role !== "assistant" || m.id !== 1).slice(-20));
   }
 
   return (
@@ -60,20 +76,28 @@ function AssistentePage() {
             </div>
             <div>
               <p className="text-sm font-semibold flex items-center gap-1">360 IA <Sparkles className="size-3 text-gold" /></p>
-              <p className="text-xs text-muted-foreground">Online • respostas em segundos</p>
+              <p className="text-xs text-muted-foreground">Conectado aos seus dados em tempo real</p>
             </div>
           </div>
 
-          <div className="flex-1 space-y-3 overflow-y-auto p-4 min-h-[420px] max-h-[520px]">
+          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4 min-h-[420px] max-h-[520px]">
             {msgs.map((m) => (
               <div key={m.id} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
-                <div className={cn("max-w-[80%] rounded-2xl px-4 py-2.5 text-sm",
-                  m.role === "user" ? "bg-gradient-primary text-primary-foreground" : "bg-muted")}>
-                  {m.text}
+                <div className={cn(
+                  "max-w-[85%] rounded-2xl px-4 py-2.5 text-sm",
+                  m.role === "user" ? "bg-gradient-primary text-primary-foreground" : "bg-muted",
+                )}>
+                  {m.role === "assistant" ? (
+                    <div className="prose prose-sm max-w-none dark:prose-invert prose-p:my-1 prose-ul:my-1">
+                      <ReactMarkdown>{m.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    m.content
+                  )}
                 </div>
               </div>
             ))}
-            {typing && (
+            {chat.isPending && (
               <div className="flex justify-start">
                 <div className="rounded-2xl bg-muted px-4 py-3">
                   <span className="inline-flex gap-1">
@@ -89,22 +113,58 @@ function AssistentePage() {
           <div className="border-t p-3">
             <div className="mb-2 flex flex-wrap gap-2">
               {suggestions.map((s) => (
-                <button key={s} onClick={() => send(s)} className="rounded-full border bg-muted/40 px-3 py-1 text-xs hover:bg-muted">
+                <button
+                  key={s}
+                  onClick={() => send(s)}
+                  disabled={chat.isPending}
+                  className="rounded-full border bg-muted/40 px-3 py-1 text-xs hover:bg-muted disabled:opacity-50"
+                >
                   {s}
                 </button>
               ))}
             </div>
-            <form onSubmit={(e) => { e.preventDefault(); send(input); }} className="flex gap-2">
-              <Input value={input} onChange={(e) => setInput(e.target.value)} placeholder="Pergunte qualquer coisa…" />
-              <Button type="submit" className="bg-gradient-primary"><Send className="size-4" /></Button>
+            <form
+              onSubmit={(e) => { e.preventDefault(); send(input); }}
+              className="flex gap-2 items-end"
+            >
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    send(input);
+                  }
+                }}
+                placeholder="Pergunte qualquer coisa…"
+                rows={1}
+                className="min-h-[40px] max-h-32 resize-none"
+              />
+              <Button type="submit" disabled={chat.isPending} className="bg-gradient-primary">
+                <Send className="size-4" />
+              </Button>
             </form>
           </div>
         </div>
 
         <div className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Insights de hoje</p>
-          {aiInsights.map((i) => (
-            <AiInsightCard key={i.id} title={i.title} text={i.text} tone={i.tone} icon={i.icon as any} />
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Insights</p>
+            <Button size="sm" variant="outline" onClick={() => insightsM.mutate()} disabled={insightsM.isPending}>
+              <Wand2 className="size-3 mr-1" />
+              {insightsM.isPending ? "Gerando…" : "Gerar"}
+            </Button>
+          </div>
+          {insights.length === 0 && !insightsM.isPending && (
+            <div className="rounded-xl border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
+              Clique em "Gerar" para receber alertas e oportunidades baseados nos seus dados.
+            </div>
+          )}
+          {insightsM.isPending && Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="h-20 animate-pulse rounded-xl border bg-muted/30" />
+          ))}
+          {insights.map((i) => (
+            <AiInsightCard key={i.id} title={i.title} text={i.text} tone={i.tone} icon={i.icon} />
           ))}
         </div>
       </div>
