@@ -27,7 +27,6 @@ export const ROLE_LABEL: Record<AppRole, string> = {
   op_manager: "Gerente Operações",
   finance_manager: "Gerente Financeiro",
   seller: "Vendedor",
-  viewer: "Visualizador",
 };
 
 export function inviteLink(token: string) {
