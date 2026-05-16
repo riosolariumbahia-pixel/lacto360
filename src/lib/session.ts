@@ -52,7 +52,7 @@ async function hydrate(userId: string | null, email: string | null) {
   }
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, org_id, organizations(name, plan, trial_ends_at)")
+    .select("full_name, org_id, organizations(name, plan, trial_ends_at, onboarded_at)")
     .eq("id", userId)
     .maybeSingle();
   const { data: roles } = await supabase
@@ -62,13 +62,15 @@ async function hydrate(userId: string | null, email: string | null) {
     .limit(1);
 
   const orgRaw = profile?.organizations as
-    | { name: string; plan: string; trial_ends_at: string }
-    | { name: string; plan: string; trial_ends_at: string }[]
+    | { name: string; plan: string; trial_ends_at: string; onboarded_at: string | null }
+    | { name: string; plan: string; trial_ends_at: string; onboarded_at: string | null }[]
     | null
     | undefined;
   const org = Array.isArray(orgRaw) ? (orgRaw[0] ?? null) : (orgRaw ?? null);
   const trialEndsAt = org?.trial_ends_at ? new Date(org.trial_ends_at).getTime() : null;
-  const onboarded = typeof window !== "undefined" && window.localStorage.getItem(ONB_KEY) === "1";
+  const onboarded =
+    !!org?.onboarded_at ||
+    (typeof window !== "undefined" && window.localStorage.getItem(ONB_KEY) === "1");
 
   emit({
     ready: true,
@@ -138,10 +140,17 @@ export const sessionApi = {
     await supabase.auth.signOut();
     if (typeof window !== "undefined") window.localStorage.removeItem(ONB_KEY);
   },
-  setOnboarded(v: boolean) {
-    if (typeof window === "undefined") return;
-    if (v) window.localStorage.setItem(ONB_KEY, "1");
-    else window.localStorage.removeItem(ONB_KEY);
+  async setOnboarded(v: boolean) {
+    if (typeof window !== "undefined") {
+      if (v) window.localStorage.setItem(ONB_KEY, "1");
+      else window.localStorage.removeItem(ONB_KEY);
+    }
+    if (cache.orgId) {
+      await supabase
+        .from("organizations")
+        .update({ onboarded_at: v ? new Date().toISOString() : null })
+        .eq("id", cache.orgId);
+    }
     emit({ ...cache, onboarded: v });
   },
   async upgrade() {

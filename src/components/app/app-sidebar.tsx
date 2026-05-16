@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  BarChart3, Boxes, Brain, Factory, LayoutDashboard, LineChart, Target,
+  BarChart3, Boxes, Brain, Factory, LayoutDashboard, LineChart, Target, UsersRound,
   Settings, ShoppingCart, Users, Wallet, Sparkles,
 } from "lucide-react";
 import {
@@ -10,7 +10,9 @@ import {
 import { trialDaysLeft, useSession } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 
-const groups = [
+type NavItem = { title: string; url: string; icon: typeof LayoutDashboard; adminOnly?: boolean };
+
+const groups: { label: string; items: NavItem[] }[] = [
   {
     label: "Visão geral",
     items: [
@@ -39,6 +41,7 @@ const groups = [
     label: "Inteligência",
     items: [
       { title: "Assistente 360 IA", url: "/app/assistente", icon: Brain },
+      { title: "Equipe", url: "/app/equipe", icon: UsersRound, adminOnly: true },
       { title: "Configurações", url: "/app/configuracoes", icon: Settings },
     ],
   },
@@ -49,6 +52,7 @@ export function AppSidebar() {
   const session = useSession();
   const days = trialDaysLeft(session);
   const isPro = session.plan === "pro";
+  const isAdmin = session.role === "admin";
 
   return (
     <Sidebar collapsible="icon">
@@ -70,7 +74,7 @@ export function AppSidebar() {
             <SidebarGroupLabel>{g.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {g.items.map((item) => {
+                {g.items.filter((it) => !it.adminOnly || isAdmin).map((item) => {
                   const active = path === item.url || (item.url !== "/app" && path.startsWith(item.url));
                   return (
                     <SidebarMenuItem key={item.title}>

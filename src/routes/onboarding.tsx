@@ -3,27 +3,81 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Sparkles, Check } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Sparkles, Plus, X } from "lucide-react";
 import { sessionApi, useSession } from "@/lib/session";
+import { supabase } from "@/integrations/supabase/client";
+import { ROLE_LABEL, type AppRole } from "@/lib/team";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/onboarding")({ component: OnboardingPage });
 
-const steps = ["Seu laticínio", "Produtos", "Meta mensal", "Plano"];
+const steps = ["Seu laticínio", "Primeiro produto", "Equipe"];
+const ROLES: AppRole[] = ["admin", "sales_manager", "op_manager", "finance_manager", "seller"];
+
+type InviteRow = { email: string; role: AppRole };
 
 function OnboardingPage() {
   const session = useSession();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [meta, setMeta] = useState("50000");
+  const [saving, setSaving] = useState(false);
+
+  const [companyName, setCompanyName] = useState("");
+  const [productName, setProductName] = useState("");
+  const [productUnit, setProductUnit] = useState("kg");
+  const [productPrice, setProductPrice] = useState("");
+  const [invites, setInvites] = useState<InviteRow[]>([{ email: "", role: "seller" }]);
 
   useEffect(() => {
-    if (session.ready && !session.user) navigate({ to: "/login" });
-  }, [session.ready, session.user, navigate]);
+    if (!session.ready) return;
+    if (!session.user) navigate({ to: "/login" });
+    else if (session.onboarded) navigate({ to: "/app" });
+    else if (!companyName && session.user.laticinio) setCompanyName(session.user.laticinio);
+  }, [session.ready, session.user, session.onboarded, session.user?.laticinio, companyName, navigate]);
 
-  function finish() {
-    sessionApi.setOnboarded(true);
-    navigate({ to: "/app" });
+  async function finish() {
+    if (!session.orgId || !session.user) return;
+    setSaving(true);
+    try {
+      if (companyName.trim() && companyName.trim() !== session.user.laticinio) {
+        await supabase.from("organizations").update({ name: companyName.trim() }).eq("id", session.orgId);
+      }
+      if (productName.trim()) {
+        await supabase.from("inventory_items").insert({
+          org_id: session.orgId,
+          name: productName.trim(),
+          unit: productUnit,
+          sale_price: Number(productPrice) || 0,
+          category: "produto",
+        });
+      }
+      const validInvites = invites.filter((i) => i.email.includes("@"));
+      if (validInvites.length) {
+        await supabase.from("invitations").insert(
+          validInvites.map((i) => ({
+            org_id: session.orgId!,
+            email: i.email.trim().toLowerCase(),
+            role: i.role,
+            invited_by: session.user!.id,
+          })),
+        );
+      }
+      await sessionApi.setOnboarded(true);
+      toast.success("Tudo pronto! Bem-vindo ao SeuLaticínio 360.");
+      navigate({ to: "/app" });
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function updateInvite(idx: number, patch: Partial<InviteRow>) {
+    setInvites((prev) => prev.map((row, i) => (i === idx ? { ...row, ...patch } : row)));
   }
 
   return (
@@ -47,60 +101,90 @@ function OnboardingPage() {
           {step === 0 && (
             <div className="space-y-4">
               <h2 className="font-serif text-3xl">Conte sobre seu laticínio</h2>
-              <p className="text-sm text-muted-foreground">Vamos personalizar a experiência para você.</p>
+              <p className="text-sm text-muted-foreground">Esse nome aparece nos relatórios e documentos.</p>
               <div className="grid gap-3 pt-2">
-                <div><Label>Nome do laticínio</Label><Input defaultValue={session.user?.laticinio} /></div>
-                <div><Label>Cidade / UF</Label><Input placeholder="Ex.: Patos de Minas / MG" /></div>
-                <div><Label>Quantos funcionários?</Label><Input type="number" placeholder="5" /></div>
+                <div>
+                  <Label>Nome do laticínio</Label>
+                  <Input value={companyName} onChange={(e) => setCompanyName(e.target.value)} placeholder="Laticínio Vale Verde" />
+                </div>
               </div>
             </div>
           )}
           {step === 1 && (
             <div className="space-y-4">
-              <h2 className="font-serif text-3xl">O que você produz?</h2>
-              <p className="text-sm text-muted-foreground">Marque tudo que se aplica.</p>
-              <div className="grid grid-cols-2 gap-3 pt-2">
-                {["Manteiga", "Queijo", "Iogurte", "Leite pasteurizado", "Doce de leite", "Requeijão"].map((p, i) => (
-                  <label key={p} className={cn("flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm hover:bg-muted/50", i === 0 && "border-primary bg-primary/5")}>
-                    <input type="checkbox" defaultChecked={i === 0} className="accent-primary" />
-                    {p}
-                  </label>
-                ))}
+              <h2 className="font-serif text-3xl">Cadastre seu primeiro produto</h2>
+              <p className="text-sm text-muted-foreground">Pode pular e cadastrar depois em Estoque.</p>
+              <div className="grid gap-3 pt-2">
+                <div>
+                  <Label>Nome do produto</Label>
+                  <Input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Queijo Minas Frescal" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Unidade</Label>
+                    <Select value={productUnit} onValueChange={setProductUnit}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="kg">kg</SelectItem>
+                        <SelectItem value="un">un</SelectItem>
+                        <SelectItem value="L">L</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Preço de venda (R$)</Label>
+                    <Input type="number" step="0.01" value={productPrice} onChange={(e) => setProductPrice(e.target.value)} placeholder="45.00" />
+                  </div>
+                </div>
               </div>
             </div>
           )}
           {step === 2 && (
             <div className="space-y-4">
-              <h2 className="font-serif text-3xl">Qual sua meta de faturamento mensal?</h2>
-              <p className="text-sm text-muted-foreground">Vamos te ajudar a chegar lá.</p>
-              <div className="pt-2">
-                <Label>Meta (R$)</Label>
-                <Input type="number" value={meta} onChange={(e) => setMeta(e.target.value)} />
-              </div>
-            </div>
-          )}
-          {step === 3 && (
-            <div className="space-y-4">
-              <h2 className="font-serif text-3xl">Seu trial Pro está pronto</h2>
-              <p className="text-sm text-muted-foreground">7 dias grátis com tudo liberado. Sem cartão.</p>
-              <div className="rounded-2xl border bg-gradient-to-br from-gold/15 to-transparent p-5">
-                <p className="text-xs font-semibold text-gold">PLANO PRO</p>
-                <p className="mt-2 font-serif text-4xl">R$ 97<span className="text-base text-muted-foreground">/mês após o trial</span></p>
-                <ul className="mt-4 space-y-2 text-sm">
-                  {["Assistente 360 IA ilimitado","Relatórios avançados","Integrações","Suporte prioritário"].map((p) => (
-                    <li key={p} className="flex items-center gap-2"><Check className="size-4 text-primary" />{p}</li>
-                  ))}
-                </ul>
+              <h2 className="font-serif text-3xl">Convide sua equipe</h2>
+              <p className="text-sm text-muted-foreground">Opcional. Você pode adicionar mais depois em Equipe.</p>
+              <div className="space-y-3 pt-2">
+                {invites.map((row, i) => (
+                  <div key={i} className="flex gap-2">
+                    <Input
+                      type="email"
+                      placeholder="email@empresa.com"
+                      value={row.email}
+                      onChange={(e) => updateInvite(i, { email: e.target.value })}
+                      className="flex-1"
+                    />
+                    <Select value={row.role} onValueChange={(v) => updateInvite(i, { role: v as AppRole })}>
+                      <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map((r) => (
+                          <SelectItem key={r} value={r}>{ROLE_LABEL[r]}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {invites.length > 1 && (
+                      <Button size="icon" variant="ghost" onClick={() => setInvites((p) => p.filter((_, j) => j !== i))}>
+                        <X className="size-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+                {invites.length < 3 && (
+                  <Button variant="outline" size="sm" onClick={() => setInvites((p) => [...p, { email: "", role: "seller" }])}>
+                    <Plus className="size-3.5" /> Adicionar outro
+                  </Button>
+                )}
               </div>
             </div>
           )}
 
           <div className="mt-8 flex justify-between">
-            <Button variant="ghost" onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0}>Voltar</Button>
+            <Button variant="ghost" onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0 || saving}>Voltar</Button>
             {step < steps.length - 1 ? (
               <Button className="bg-gradient-primary" onClick={() => setStep(step + 1)}>Continuar</Button>
             ) : (
-              <Button className="bg-gradient-primary" onClick={finish}>Entrar no app</Button>
+              <Button className="bg-gradient-primary" onClick={finish} disabled={saving}>
+                {saving ? "Salvando..." : "Concluir e entrar"}
+              </Button>
             )}
           </div>
         </div>

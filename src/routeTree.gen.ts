@@ -16,11 +16,13 @@ import { Route as CadastroRouteImport } from './routes/cadastro'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as ConviteTokenRouteImport } from './routes/convite.$token'
 import { Route as AppVendasRouteImport } from './routes/app.vendas'
 import { Route as AppRelatoriosRouteImport } from './routes/app.relatorios'
 import { Route as AppProducaoRouteImport } from './routes/app.producao'
 import { Route as AppFinanceiroRouteImport } from './routes/app.financeiro'
 import { Route as AppEstoqueRouteImport } from './routes/app.estoque'
+import { Route as AppEquipeRouteImport } from './routes/app.equipe'
 import { Route as AppConfiguracoesRouteImport } from './routes/app.configuracoes'
 import { Route as AppComercialRouteImport } from './routes/app.comercial'
 import { Route as AppClientesRouteImport } from './routes/app.clientes'
@@ -61,6 +63,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const ConviteTokenRoute = ConviteTokenRouteImport.update({
+  id: '/convite/$token',
+  path: '/convite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppVendasRoute = AppVendasRouteImport.update({
   id: '/vendas',
   path: '/vendas',
@@ -84,6 +91,11 @@ const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
 const AppEstoqueRoute = AppEstoqueRouteImport.update({
   id: '/estoque',
   path: '/estoque',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEquipeRoute = AppEquipeRouteImport.update({
+  id: '/equipe',
+  path: '/equipe',
   getParentRoute: () => AppRoute,
 } as any)
 const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
@@ -118,11 +130,13 @@ export interface FileRoutesByFullPath {
   '/app/clientes': typeof AppClientesRoute
   '/app/comercial': typeof AppComercialRoute
   '/app/configuracoes': typeof AppConfiguracoesRoute
+  '/app/equipe': typeof AppEquipeRoute
   '/app/estoque': typeof AppEstoqueRoute
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/producao': typeof AppProducaoRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/vendas': typeof AppVendasRoute
+  '/convite/$token': typeof ConviteTokenRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
@@ -135,11 +149,13 @@ export interface FileRoutesByTo {
   '/app/clientes': typeof AppClientesRoute
   '/app/comercial': typeof AppComercialRoute
   '/app/configuracoes': typeof AppConfiguracoesRoute
+  '/app/equipe': typeof AppEquipeRoute
   '/app/estoque': typeof AppEstoqueRoute
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/producao': typeof AppProducaoRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/vendas': typeof AppVendasRoute
+  '/convite/$token': typeof ConviteTokenRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -154,11 +170,13 @@ export interface FileRoutesById {
   '/app/clientes': typeof AppClientesRoute
   '/app/comercial': typeof AppComercialRoute
   '/app/configuracoes': typeof AppConfiguracoesRoute
+  '/app/equipe': typeof AppEquipeRoute
   '/app/estoque': typeof AppEstoqueRoute
   '/app/financeiro': typeof AppFinanceiroRoute
   '/app/producao': typeof AppProducaoRoute
   '/app/relatorios': typeof AppRelatoriosRoute
   '/app/vendas': typeof AppVendasRoute
+  '/convite/$token': typeof ConviteTokenRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
@@ -174,11 +192,13 @@ export interface FileRouteTypes {
     | '/app/clientes'
     | '/app/comercial'
     | '/app/configuracoes'
+    | '/app/equipe'
     | '/app/estoque'
     | '/app/financeiro'
     | '/app/producao'
     | '/app/relatorios'
     | '/app/vendas'
+    | '/convite/$token'
     | '/app/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -191,11 +211,13 @@ export interface FileRouteTypes {
     | '/app/clientes'
     | '/app/comercial'
     | '/app/configuracoes'
+    | '/app/equipe'
     | '/app/estoque'
     | '/app/financeiro'
     | '/app/producao'
     | '/app/relatorios'
     | '/app/vendas'
+    | '/convite/$token'
     | '/app'
   id:
     | '__root__'
@@ -209,11 +231,13 @@ export interface FileRouteTypes {
     | '/app/clientes'
     | '/app/comercial'
     | '/app/configuracoes'
+    | '/app/equipe'
     | '/app/estoque'
     | '/app/financeiro'
     | '/app/producao'
     | '/app/relatorios'
     | '/app/vendas'
+    | '/convite/$token'
     | '/app/'
   fileRoutesById: FileRoutesById
 }
@@ -224,6 +248,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OnboardingRoute: typeof OnboardingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ConviteTokenRoute: typeof ConviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -277,6 +302,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/convite/$token': {
+      id: '/convite/$token'
+      path: '/convite/$token'
+      fullPath: '/convite/$token'
+      preLoaderRoute: typeof ConviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/app/vendas': {
       id: '/app/vendas'
       path: '/vendas'
@@ -310,6 +342,13 @@ declare module '@tanstack/react-router' {
       path: '/estoque'
       fullPath: '/app/estoque'
       preLoaderRoute: typeof AppEstoqueRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/equipe': {
+      id: '/app/equipe'
+      path: '/equipe'
+      fullPath: '/app/equipe'
+      preLoaderRoute: typeof AppEquipeRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/configuracoes': {
@@ -348,6 +387,7 @@ interface AppRouteChildren {
   AppClientesRoute: typeof AppClientesRoute
   AppComercialRoute: typeof AppComercialRoute
   AppConfiguracoesRoute: typeof AppConfiguracoesRoute
+  AppEquipeRoute: typeof AppEquipeRoute
   AppEstoqueRoute: typeof AppEstoqueRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppProducaoRoute: typeof AppProducaoRoute
@@ -361,6 +401,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppClientesRoute: AppClientesRoute,
   AppComercialRoute: AppComercialRoute,
   AppConfiguracoesRoute: AppConfiguracoesRoute,
+  AppEquipeRoute: AppEquipeRoute,
   AppEstoqueRoute: AppEstoqueRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
   AppProducaoRoute: AppProducaoRoute,
@@ -378,17 +419,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OnboardingRoute: OnboardingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ConviteTokenRoute: ConviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

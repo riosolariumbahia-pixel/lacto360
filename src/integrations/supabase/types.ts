@@ -386,6 +386,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          onboarded_at: string | null
           owner_id: string
           plan: string
           trial_ends_at: string
@@ -395,6 +396,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          onboarded_at?: string | null
           owner_id: string
           plan?: string
           trial_ends_at?: string
@@ -404,6 +406,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          onboarded_at?: string | null
           owner_id?: string
           plan?: string
           trial_ends_at?: string
