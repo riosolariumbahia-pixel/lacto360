@@ -1,7 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   BarChart3, Boxes, Brain, Factory, LayoutDashboard, LineChart, Target, UsersRound,
-  Settings, ShoppingCart, Users, Wallet, Sparkles,
+  Settings, ShoppingCart, Users, Wallet, Sparkles, Crown,
 } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
@@ -42,6 +42,7 @@ const groups: { label: string; items: NavItem[] }[] = [
     items: [
       { title: "Assistente 360 IA", url: "/app/assistente", icon: Brain },
       { title: "Equipe", url: "/app/equipe", icon: UsersRound, adminOnly: true },
+      { title: "Assinatura", url: "/app/assinatura", icon: Crown, adminOnly: true },
       { title: "Configurações", url: "/app/configuracoes", icon: Settings },
     ],
   },
@@ -109,7 +110,7 @@ export function AppSidebar() {
               <div className="h-full bg-gradient-primary" style={{ width: `${((7 - days) / 7) * 100}%` }} />
             </div>
             <Button asChild size="sm" className="mt-3 w-full bg-gradient-gold text-gold-foreground hover:opacity-90">
-              <Link to="/app/configuracoes">Fazer upgrade</Link>
+              <Link to="/app/assinatura">Fazer upgrade</Link>
             </Button>
           </div>
         )}
