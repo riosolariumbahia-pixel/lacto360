@@ -27,6 +27,7 @@ import { Route as AppConfiguracoesRouteImport } from './routes/app.configuracoes
 import { Route as AppComercialRouteImport } from './routes/app.comercial'
 import { Route as AppClientesRouteImport } from './routes/app.clientes'
 import { Route as AppAssistenteRouteImport } from './routes/app.assistente'
+import { Route as AppAssinaturaRouteImport } from './routes/app.assinatura'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -118,6 +119,11 @@ const AppAssistenteRoute = AppAssistenteRouteImport.update({
   path: '/assistente',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAssinaturaRoute = AppAssinaturaRouteImport.update({
+  id: '/assinatura',
+  path: '/assinatura',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -126,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/app/assinatura': typeof AppAssinaturaRoute
   '/app/assistente': typeof AppAssistenteRoute
   '/app/clientes': typeof AppClientesRoute
   '/app/comercial': typeof AppComercialRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/app/assinatura': typeof AppAssinaturaRoute
   '/app/assistente': typeof AppAssistenteRoute
   '/app/clientes': typeof AppClientesRoute
   '/app/comercial': typeof AppComercialRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/onboarding': typeof OnboardingRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/app/assinatura': typeof AppAssinaturaRoute
   '/app/assistente': typeof AppAssistenteRoute
   '/app/clientes': typeof AppClientesRoute
   '/app/comercial': typeof AppComercialRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/reset-password'
+    | '/app/assinatura'
     | '/app/assistente'
     | '/app/clientes'
     | '/app/comercial'
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/reset-password'
+    | '/app/assinatura'
     | '/app/assistente'
     | '/app/clientes'
     | '/app/comercial'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/onboarding'
     | '/reset-password'
+    | '/app/assinatura'
     | '/app/assistente'
     | '/app/clientes'
     | '/app/comercial'
@@ -379,10 +391,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssistenteRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/assinatura': {
+      id: '/app/assinatura'
+      path: '/assinatura'
+      fullPath: '/app/assinatura'
+      preLoaderRoute: typeof AppAssinaturaRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppAssinaturaRoute: typeof AppAssinaturaRoute
   AppAssistenteRoute: typeof AppAssistenteRoute
   AppClientesRoute: typeof AppClientesRoute
   AppComercialRoute: typeof AppComercialRoute
@@ -397,6 +417,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAssinaturaRoute: AppAssinaturaRoute,
   AppAssistenteRoute: AppAssistenteRoute,
   AppClientesRoute: AppClientesRoute,
   AppComercialRoute: AppComercialRoute,
@@ -424,13 +445,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
