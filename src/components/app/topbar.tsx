@@ -5,11 +5,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
-import { notifications } from "@/lib/mock-data";
 import { useSession } from "@/lib/session";
 import { CommandMenu } from "./command-menu";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+
+type Notif = { id: number; title: string; time: string; tone: "warning" | "success" | "info" };
+const notifications: Notif[] = [];
 
 export function Topbar() {
   const session = useSession();

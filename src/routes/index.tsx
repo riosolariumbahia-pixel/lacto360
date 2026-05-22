@@ -9,7 +9,16 @@ import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Area, AreaChart, ResponsiveContainer } from "recharts";
-import { weeklyProduction } from "@/lib/mock-data";
+
+const weeklyProduction = [
+  { day: "Seg", kg: 185 },
+  { day: "Ter", kg: 210 },
+  { day: "Qua", kg: 198 },
+  { day: "Qui", kg: 230 },
+  { day: "Sex", kg: 215 },
+  { day: "Sáb", kg: 245 },
+  { day: "Dom", kg: 248 },
+];
 
 export const Route = createFileRoute("/")({
   head: () => ({

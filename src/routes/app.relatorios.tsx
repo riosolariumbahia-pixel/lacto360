@@ -10,7 +10,7 @@ import { KpiCard } from "@/components/app/kpi-card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { fmtBRL } from "@/lib/mock-data";
+import { fmtBRL } from "@/lib/utils";
 import { reportsApi, exportReportCSV, type Period } from "@/lib/reports";
 import { toast } from "sonner";
 
