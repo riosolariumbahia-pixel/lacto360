@@ -1,81 +1,72 @@
-# Fase 5 — Onboarding Guiado + Convites de Equipe
+## Objetivo
 
-Conecta o `onboarding.tsx` (hoje só visual) ao backend real e adiciona gestão completa de convites/equipe usando a tabela `invitations` que já existe.
+Substituir os dados mockados do dashboard (`src/routes/app.index.tsx`) por dados reais do Supabase, com atualização em tempo real, estados de loading/erro e consistência entre módulos.
 
-## Escopo
+## Diagnóstico atual
 
-**Dentro:**
-- Onboarding em 3 passos pós-cadastro: dados da empresa → primeiros cadastros (1 produto + 1 cliente opcional) → convidar equipe
-- Detecção automática se a org já completou onboarding (flag `onboarded_at` em `organizations`); evita repetir
-- Página `app.equipe.tsx` (nova) — lista membros + convites pendentes, criar/revogar/reenviar convite
-- Aceite de convite via link `/convite/:token` — pré-preenche cadastro com email + token; o trigger `handle_new_user` já consome `invite_token` do metadata
-- Papéis selecionáveis: admin, sales_manager, op_manager, finance_manager, seller, viewer
-- Email de convite enviado via Lovable AI Gateway? Não — só link compartilhável (copiar para clipboard). Email fica para Fase 6.
+- **Dashboard (`app.index.tsx`)**: 100% mockado (`@/lib/mock-data`) — KPIs, gráficos de produção, financeiro, canais de venda e top clientes são todos falsos.
+- **Relatórios (`app.relatorios.tsx`)**: já usa dados reais via `src/lib/reports.ts` + TanStack Query (apenas importa `fmtBRL` do mock — trivial).
+- **Módulos operacionais** (`operations.ts`, `commercial.ts`, `finance.ts`): já leem/escrevem direto no Supabase corretamente. Triggers de DB já cuidam de:
+  - venda confirmada → baixa estoque + cria contas a receber
+  - produção → entrada de estoque
+  - pagamento → atualiza status de `finance_entries`
+- **RLS**: já isola por `org_id` via `current_org_id()` (corrigido na turn anterior).
 
-**Fora:**
-- Envio real de email transacional (próxima fase)
-- Edição de papéis após aceite (só revogar/recriar)
-- SSO/SAML
+Logo, o trabalho é **frontend de leitura agregada + realtime**, não mexer nas escritas nem na lógica de negócio.
 
-## Backend
+## Mudanças
 
-### Migração
-- Adicionar `onboarded_at timestamptz` em `organizations` (nullable)
-- Policy adicional em `invitations`: permitir SELECT público apenas quando filtrado por `token` (já existe "anyone read invite by token") ✅
-- Função `revoke_invitation(invite_id)` security definer — só admin da org
+### 1. Nova camada `src/lib/dashboard.ts`
 
-### Server functions (`src/lib/team.functions.ts`)
-- `listTeam()` — retorna profiles + roles da org atual (requireSupabaseAuth)
-- `listInvitations()` — convites pendentes da org
-- `createInvitation({ email, role })` — admin only; retorna `{ token, link }`
-- `revokeInvitation({ id })` — admin only
-- `getInvitationByToken({ token })` — público (sem middleware), retorna org name + role para exibir no cadastro
+Funções de leitura agregada, todas filtradas implicitamente por `org_id` via RLS:
 
-### Server function (`src/lib/onboarding.functions.ts`)
-- `completeOnboarding({ companyName?, firstProduct?, firstCustomer? })` — atualiza org, opcionalmente cria 1 inventory_item e 1 customer, marca `onboarded_at`
+- `getDashboardKPIs()` — faturamento do mês (sum `finance_entries.paid_amount` kind=receivable do mês), lucro líquido (receita paga − despesa paga), produção mensal (sum `butter_kg + cheese_kg`), rendimento médio (avg `yield_percent`), contas a pagar/receber em aberto, ticket médio (avg `sales_orders.total` confirmados), pedidos concluídos, inadimplência (% entries vencidas), margem (%).
+- `getWeeklyProduction()` — últimos 7 dias agrupando `production_butter` + `production_cheese` por dia.
+- `getMonthlyFinance()` — últimos 8 meses: receita, despesa, lucro (via `finance_entries.paid_amount` + `paid_at`).
+- `getSalesChannels()` — distribuição de `sales_orders.channel` no mês corrente (%).
+- `getTopClients()` — top 5 por faturamento (sum `sales_orders.total` group by `customer_id`), join com `customers.name`, com progresso vs meta.
+- Cálculos com guards contra NaN / divisão por zero / valores nulos.
 
-## Frontend
+### 2. Reescrita do `src/routes/app.index.tsx`
 
-### `src/routes/onboarding.tsx` (reescrita conectada)
-- Stepper 1/3 (já existe visualmente)
-- Step 1: Nome da empresa (preenche `organizations.name`)
-- Step 2: Primeiro produto (nome, unidade, preço) — opcional, pode pular
-- Step 3: Convidar equipe (até 3 emails + papel cada) — opcional
-- Botão "Concluir" → `completeOnboarding` + redireciona para `/app`
-- Guard em `app.tsx`: se `org.onboarded_at` é null e usuário é admin, redirecionar para `/onboarding`
+- Remover import de `@/lib/mock-data`.
+- Cada seção usa `useQuery` com `queryKey` próprio e `staleTime: 30s`.
+- Skeleton loaders por seção enquanto carrega.
+- Empty states ("Cadastre seu primeiro pedido…") quando arrays vazios.
+- Toast de erro em falha.
+- Manter layout/visual atual.
 
-### `src/routes/app.equipe.tsx` (nova)
-- `<PageHeader>` "Equipe"
-- Card "Membros" — tabela com nome, email, papel, data de entrada
-- Card "Convites pendentes" — tabela com email, papel, expira em, botão copiar link, botão revogar
-- Diálogo "Convidar membro" — email + select de papel
-- Visível apenas para admin (outros papéis veem mensagem)
+### 3. Realtime no `src/routes/app.tsx`
 
-### `src/routes/convite.$token.tsx` (nova)
-- Loader chama `getInvitationByToken` (público)
-- Mostra: "Você foi convidado para [Org] como [Papel]"
-- Botão "Aceitar e criar conta" → redireciona para `/cadastro?token=xxx&email=yyy`
-- Atualizar `cadastro.tsx` para ler `?token=` e injetar em `raw_user_meta_data.invite_token` no signUp
+Hook único que assina canais Postgres para `sales_orders`, `sales_order_items`, `finance_entries`, `finance_payments`, `production_butter`, `production_cheese`, `customers`, `inventory_items` — em cada evento chama `queryClient.invalidateQueries({ queryKey: ["dashboard"] })` e `["rep"]`. Cleanup no unmount.
 
-### Sidebar
-- Adicionar item "Equipe" (`/app/equipe`) visível só para admin
+### 4. Migração para habilitar realtime
 
-## Permissões
-- Equipe: admin gerencia; outros papéis sem acesso
-- Onboarding: qualquer usuário recém-criado da org
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE
+  sales_orders, sales_order_items, finance_entries, finance_payments,
+  production_butter, production_cheese, customers, inventory_items;
+ALTER TABLE ... REPLICA IDENTITY FULL;  -- nas mesmas tabelas
+```
 
-## Arquivos
-- `src/lib/team.functions.ts` (novo, server)
-- `src/lib/onboarding.functions.ts` (novo, server)
-- `src/routes/onboarding.tsx` (reescrita)
-- `src/routes/app.equipe.tsx` (nova)
-- `src/routes/convite.$token.tsx` (nova)
-- `src/routes/cadastro.tsx` (edição: aceitar token via query)
-- `src/routes/app.tsx` (guard de onboarding)
-- `src/components/app/app-sidebar.tsx` (item Equipe)
-- 1 migração: coluna `onboarded_at` + função `revoke_invitation`
+### 5. Limpeza
 
-## Roadmap restante
-- **Fase 6** — Polimento, billing/trial real, landing page comercial, envio de email transacional dos convites
+- Mover `fmtBRL` e `fmtNum` de `mock-data.ts` para `src/lib/utils.ts` (ou exportar de `dashboard.ts`) e atualizar imports em `app.relatorios.tsx`.
+- Deletar `src/lib/mock-data.ts`.
 
-Aprovar para executar.
+## Fora do escopo (não vou mexer)
+
+- Auth, RLS, login, onboarding — já funcionando.
+- `reports.ts` — já real, apenas redirecionar import de `fmtBRL`.
+- Lógica de escrita dos módulos (já correta e coberta por triggers).
+- Performance avançada (paginação infinita, virtualização) — fora do escopo desta auditoria.
+
+## Arquivos afetados
+
+- ✏️ `src/routes/app.index.tsx` (reescrita)
+- ✏️ `src/routes/app.tsx` (adiciona realtime hook)
+- ✏️ `src/routes/app.relatorios.tsx` (troca import `fmtBRL`)
+- ✏️ `src/lib/utils.ts` (adiciona `fmtBRL`/`fmtNum`)
+- ➕ `src/lib/dashboard.ts`
+- ➕ migração SQL (publication realtime)
+- 🗑️ `src/lib/mock-data.ts`
