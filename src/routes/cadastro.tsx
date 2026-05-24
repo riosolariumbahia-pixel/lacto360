@@ -8,9 +8,10 @@ import { sessionApi } from "@/lib/session";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cadastro")({
-  validateSearch: (s: Record<string, unknown>): { invite?: string } => ({
-    invite: typeof s.invite === "string" ? s.invite : undefined,
-  }),
+  validateSearch: (s: Record<string, unknown>): { invite?: string } => {
+    const invite = typeof s.invite === "string" ? s.invite : undefined;
+    return invite ? { invite } : {};
+  },
   component: CadastroPage,
 });
 
