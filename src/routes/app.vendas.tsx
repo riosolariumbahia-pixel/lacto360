@@ -361,7 +361,12 @@ function NewOrderDialog({
                 <Select value={l.item_id} onValueChange={(v) => pickItem(i, v)}>
                   <SelectTrigger><SelectValue placeholder="Produto…" /></SelectTrigger>
                   <SelectContent>
-                    {items.map((it) => (
+                    {items.length === 0 && (
+                      <div className="px-3 py-2 text-xs text-muted-foreground">
+                        Nenhum produto cadastrado. Vá em Estoque para adicionar.
+                      </div>
+                    )}
+                    {items.filter((it) => it.is_active).map((it) => (
                       <SelectItem key={it.id} value={it.id}>
                         {it.name} ({fmtNum(Number(it.stock_qty), 2)} {it.unit})
                       </SelectItem>
