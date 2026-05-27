@@ -24,7 +24,6 @@ function LoginPage() {
       toast.error(error.message === "Invalid login credentials" ? "E-mail ou senha incorretos." : error.message);
       return;
     }
-    sessionApi.setOnboarded(true);
     navigate({ to: "/app" });
   }
 
