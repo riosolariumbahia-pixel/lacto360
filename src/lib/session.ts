@@ -45,6 +45,19 @@ function emit(next: Session) {
   listeners.forEach((l) => l());
 }
 
+function onboardKey(orgId: string | null, userId: string) {
+  return `${ONB_KEY}.${orgId ?? userId}`;
+}
+
+function clearOnboardingCache() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(ONB_KEY);
+  for (let i = window.localStorage.length - 1; i >= 0; i -= 1) {
+    const key = window.localStorage.key(i);
+    if (key?.startsWith(`${ONB_KEY}.`)) window.localStorage.removeItem(key);
+  }
+}
+
 async function hydrate(userId: string | null, email: string | null) {
   if (!userId) {
     emit({ ...DEFAULT, ready: true });
@@ -70,7 +83,8 @@ async function hydrate(userId: string | null, email: string | null) {
   const trialEndsAt = org?.trial_ends_at ? new Date(org.trial_ends_at).getTime() : null;
   const onboarded =
     !!org?.onboarded_at ||
-    (typeof window !== "undefined" && window.localStorage.getItem(ONB_KEY) === "1");
+    (typeof window !== "undefined" &&
+      window.localStorage.getItem(onboardKey(profile?.org_id ?? null, userId)) === "1");
 
   emit({
     ready: true,
@@ -116,7 +130,15 @@ export function useSession(): Session {
 export const sessionApi = {
   get: () => cache,
   async signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // ignore stale sessions
+    }
+    clearOnboardingCache();
+    emit({ ...DEFAULT, ready: true });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error) await hydrate(data.user?.id ?? null, data.user?.email ?? email);
     return error;
   },
   async signUp(opts: { fullName: string; email: string; password: string; companyName: string; inviteToken?: string }) {
@@ -131,9 +153,7 @@ export const sessionApi = {
     } catch {
       // ignore
     }
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(ONB_KEY);
-    }
+    clearOnboardingCache();
     emit({ ...DEFAULT, ready: true });
     const { error } = await supabase.auth.signUp({
       email: opts.email,
@@ -151,18 +171,21 @@ export const sessionApi = {
   },
   async signOut() {
     await supabase.auth.signOut();
-    if (typeof window !== "undefined") window.localStorage.removeItem(ONB_KEY);
+    clearOnboardingCache();
+    emit({ ...DEFAULT, ready: true });
   },
   async setOnboarded(v: boolean) {
-    if (typeof window !== "undefined") {
-      if (v) window.localStorage.setItem(ONB_KEY, "1");
-      else window.localStorage.removeItem(ONB_KEY);
-    }
     if (cache.orgId) {
-      await supabase
+      const { error } = await supabase
         .from("organizations")
         .update({ onboarded_at: v ? new Date().toISOString() : null })
         .eq("id", cache.orgId);
+      if (error) throw error;
+    }
+    if (typeof window !== "undefined" && cache.user) {
+      const key = onboardKey(cache.orgId, cache.user.id);
+      if (v) window.localStorage.setItem(key, "1");
+      else window.localStorage.removeItem(key);
     }
     emit({ ...cache, onboarded: v });
   },
