@@ -6,6 +6,7 @@ import {
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { trialDaysLeft, useSession } from "@/lib/session";
 import { Button } from "@/components/ui/button";
@@ -54,6 +55,10 @@ export function AppSidebar() {
   const days = trialDaysLeft(session);
   const isPro = session.plan === "pro";
   const isAdmin = session.role === "admin";
+  const { isMobile, setOpenMobile } = useSidebar();
+  const handleNav = () => {
+    if (isMobile) setOpenMobile(false);
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -80,7 +85,7 @@ export function AppSidebar() {
                   return (
                     <SidebarMenuItem key={item.title}>
                       <SidebarMenuButton asChild isActive={active} tooltip={item.title}>
-                        <Link to={item.url}>
+                        <Link to={item.url} onClick={handleNav}>
                           <item.icon className="size-4" />
                           <span>{item.title}</span>
                         </Link>
