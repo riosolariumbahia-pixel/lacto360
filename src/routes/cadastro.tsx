@@ -45,8 +45,8 @@ function CadastroPage() {
       toast.error(error.message);
       return;
     }
-    toast.success("Conta criada! Verifique seu e-mail para confirmar.");
-    navigate({ to: "/onboarding" });
+    toast.success("Conta criada! Verifique seu e-mail para confirmar antes de entrar.");
+    navigate({ to: "/login" });
   }
 
   return (
