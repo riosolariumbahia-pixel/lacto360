@@ -122,6 +122,19 @@ export const sessionApi = {
   async signUp(opts: { fullName: string; email: string; password: string; companyName: string; inviteToken?: string }) {
     const redirectTo =
       typeof window !== "undefined" ? `${window.location.origin}/app` : undefined;
+    // Evita que a sessão de um usuário anterior "vaze" para a nova conta
+    // (signup com confirmação de e-mail não cria nova sessão automaticamente,
+    // então sem signOut o navegador continua logado como o usuário anterior
+    // e exibe os dados da organização errada).
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // ignore
+    }
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(ONB_KEY);
+    }
+    emit({ ...DEFAULT, ready: true });
     const { error } = await supabase.auth.signUp({
       email: opts.email,
       password: opts.password,
