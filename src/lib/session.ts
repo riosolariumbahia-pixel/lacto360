@@ -131,7 +131,7 @@ export const sessionApi = {
   get: () => cache,
   async signIn(email: string, password: string) {
     try {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: "local" });
     } catch {
       // ignore stale sessions
     }
@@ -149,7 +149,7 @@ export const sessionApi = {
     // então sem signOut o navegador continua logado como o usuário anterior
     // e exibe os dados da organização errada).
     try {
-      await supabase.auth.signOut();
+      await supabase.auth.signOut({ scope: "local" });
     } catch {
       // ignore
     }
