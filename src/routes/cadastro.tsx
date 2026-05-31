@@ -40,13 +40,21 @@ function CadastroPage() {
       companyName: laticinio || `${name} Laticínios`,
       inviteToken: invite,
     });
-    setLoading(false);
     if (error) {
+      setLoading(false);
       toast.error(error.message);
       return;
     }
-    toast.success("Conta criada! Verifique seu e-mail para confirmar antes de entrar.");
-    navigate({ to: "/login" });
+    // Auto-login após cadastro (e-mail é auto-confirmado).
+    const signInError = await sessionApi.signIn(email, password);
+    setLoading(false);
+    if (signInError) {
+      toast.success("Conta criada! Faça login para continuar.");
+      navigate({ to: "/login" });
+      return;
+    }
+    toast.success("Conta criada com sucesso!");
+    navigate({ to: "/app" });
   }
 
   return (
