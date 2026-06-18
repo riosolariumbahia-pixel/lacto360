@@ -76,8 +76,10 @@ export const commercialApi = {
     return (data ?? []) as Customer[];
   },
   async createCustomer(orgId: string, p: Partial<Customer> & { name: string }) {
+    const { data: auth } = await supabase.auth.getUser();
     const { error } = await supabase.from("customers").insert({
       org_id: orgId,
+      owner_id: auth.user?.id ?? null,
       name: p.name,
       doc: p.doc ?? null,
       email: p.email ?? null,
