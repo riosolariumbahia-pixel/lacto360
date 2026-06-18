@@ -117,20 +117,16 @@ export const teamApi = {
 
 export async function getInvitationByToken(token: string) {
   const { data, error } = await supabase
-    .from("invitations")
-    .select("id, email, role, expires_at, accepted_at, org_id, organizations(name)")
-    .eq("token", token)
-    .maybeSingle();
+    .rpc("get_invite_by_token", { _token: token });
   if (error) throw error;
-  if (!data) return null;
-  const orgRaw = data.organizations as { name: string } | { name: string }[] | null;
-  const org = Array.isArray(orgRaw) ? orgRaw[0] : orgRaw;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
   return {
-    id: data.id,
-    email: data.email,
-    role: data.role as AppRole,
-    expires_at: data.expires_at,
-    accepted_at: data.accepted_at,
-    org_name: org?.name ?? "Equipe",
+    id: row.id as string,
+    email: row.email as string,
+    role: row.role as AppRole,
+    expires_at: row.expires_at as string,
+    accepted_at: row.accepted_at as string | null,
+    org_name: (row.org_name as string) ?? "Equipe",
   };
 }
