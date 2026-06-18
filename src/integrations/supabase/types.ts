@@ -25,6 +25,7 @@ export type Database = {
           name: string
           notes: string | null
           org_id: string
+          owner_id: string | null
           payment_terms: string | null
           phone: string | null
           state: string | null
@@ -41,6 +42,7 @@ export type Database = {
           name: string
           notes?: string | null
           org_id: string
+          owner_id?: string | null
           payment_terms?: string | null
           phone?: string | null
           state?: string | null
@@ -57,6 +59,7 @@ export type Database = {
           name?: string
           notes?: string | null
           org_id?: string
+          owner_id?: string | null
           payment_terms?: string | null
           phone?: string | null
           state?: string | null
@@ -779,6 +782,18 @@ export type Database = {
     }
     Functions: {
       current_org_id: { Args: never; Returns: string }
+      get_invite_by_token: {
+        Args: { _token: string }
+        Returns: {
+          accepted_at: string
+          email: string
+          expires_at: string
+          id: string
+          org_id: string
+          org_name: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       has_role: {
         Args: {
           _org_id: string
