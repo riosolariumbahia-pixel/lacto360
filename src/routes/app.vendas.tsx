@@ -52,8 +52,8 @@ function VendasPage() {
     enabled: !!orgId,
   });
   const items = useQuery({
-    queryKey: ["inventory_items", orgId],
-    queryFn: () => operationsApi.listItems(),
+    queryKey: ["inventory_catalog", orgId],
+    queryFn: () => operationsApi.listCatalog(),
     enabled: !!orgId,
   });
   const sellers = useQuery({

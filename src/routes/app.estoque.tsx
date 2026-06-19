@@ -19,8 +19,15 @@ import { PageHeader } from "@/components/app/page-header";
 import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/session";
 import { operationsApi, fmtNum, type InventoryItem } from "@/lib/operations";
+import { RoleGate } from "@/components/app/role-gate";
 
-export const Route = createFileRoute("/app/estoque")({ component: EstoquePage });
+export const Route = createFileRoute("/app/estoque")({
+  component: () => (
+    <RoleGate roles={["admin", "op_manager"]}>
+      <EstoquePage />
+    </RoleGate>
+  ),
+});
 
 function EstoquePage() {
   const session = useSession();

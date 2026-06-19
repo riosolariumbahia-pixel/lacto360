@@ -806,6 +806,27 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      list_inventory_catalog: {
+        Args: never
+        Returns: {
+          category: string
+          id: string
+          is_active: boolean
+          name: string
+          org_id: string
+          sale_price: number
+          sku: string
+          stock_qty: number
+          unit: string
+        }[]
+      }
+      list_org_members_directory: {
+        Args: never
+        Returns: {
+          full_name: string
+          id: string
+        }[]
+      }
     }
     Enums: {
       app_role:

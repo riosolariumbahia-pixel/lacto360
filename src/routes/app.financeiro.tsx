@@ -36,7 +36,15 @@ import {
   type FinanceEntry, type FinanceCategory, type FinanceEntryKind,
 } from "@/lib/finance";
 
-export const Route = createFileRoute("/app/financeiro")({ component: FinanceiroPage });
+import { RoleGate } from "@/components/app/role-gate";
+
+export const Route = createFileRoute("/app/financeiro")({
+  component: () => (
+    <RoleGate roles={["admin", "finance_manager"]}>
+      <FinanceiroPage />
+    </RoleGate>
+  ),
+});
 
 const COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
 

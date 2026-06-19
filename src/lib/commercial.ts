@@ -107,9 +107,12 @@ export const commercialApi = {
     if (error) throw error;
     const ids = Array.from(new Set((roles ?? []).map((r) => r.user_id)));
     if (ids.length === 0) return [];
-    const { data: profiles } = await supabase
-      .from("profiles").select("id, full_name").in("id", ids);
-    const byId = new Map((profiles ?? []).map((p) => [p.id, p.full_name as string | null]));
+    // Usa RPC pública (id + nome) para que vendedores/gerentes vejam apenas
+    // nomes dos colegas sem expor outras colunas da tabela profiles.
+    const { data: dir } = await (supabase as unknown as {
+      rpc: (fn: string) => Promise<{ data: Array<{ id: string; full_name: string | null }> | null }>;
+    }).rpc("list_org_members_directory");
+    const byId = new Map((dir ?? []).map((p) => [p.id, p.full_name]));
     return (roles ?? []).map((r) => ({
       id: r.user_id,
       full_name: byId.get(r.user_id) ?? null,

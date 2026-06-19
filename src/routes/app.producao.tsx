@@ -22,12 +22,17 @@ import {
   Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import { useSession } from "@/lib/session";
+import { RoleGate } from "@/components/app/role-gate";
 import {
   operationsApi, fmtBRL, fmtNum, type ButterLot, type CheeseLot, type InventoryItem,
 } from "@/lib/operations";
 
 export const Route = createFileRoute("/app/producao")({
-  component: ProducaoPage,
+  component: () => (
+    <RoleGate roles={["admin", "op_manager"]}>
+      <ProducaoPage />
+    </RoleGate>
+  ),
 });
 
 function ProducaoPage() {

@@ -8,42 +8,42 @@ import {
   SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { trialDaysLeft, useSession } from "@/lib/session";
+import { trialDaysLeft, useSession, type AppRole } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 
-type NavItem = { title: string; url: string; icon: typeof LayoutDashboard; adminOnly?: boolean };
+type NavItem = { title: string; url: string; icon: typeof LayoutDashboard; roles?: AppRole[] };
 
 const groups: { label: string; items: NavItem[] }[] = [
   {
     label: "Visão geral",
     items: [
       { title: "Dashboard", url: "/app", icon: LayoutDashboard },
-      { title: "Relatórios", url: "/app/relatorios", icon: BarChart3 },
+      { title: "Relatórios", url: "/app/relatorios", icon: BarChart3, roles: ["admin"] },
     ],
   },
   {
     label: "Operação",
     items: [
-      { title: "Produção", url: "/app/producao", icon: Factory },
-      { title: "Estoque", url: "/app/estoque", icon: Boxes },
-      { title: "Vendas", url: "/app/vendas", icon: ShoppingCart },
-      { title: "Clientes", url: "/app/clientes", icon: Users },
-      { title: "Comercial", url: "/app/comercial", icon: Target },
+      { title: "Produção", url: "/app/producao", icon: Factory, roles: ["admin", "op_manager"] },
+      { title: "Estoque", url: "/app/estoque", icon: Boxes, roles: ["admin", "op_manager"] },
+      { title: "Vendas", url: "/app/vendas", icon: ShoppingCart, roles: ["admin", "sales_manager", "seller"] },
+      { title: "Clientes", url: "/app/clientes", icon: Users, roles: ["admin", "sales_manager", "seller"] },
+      { title: "Comercial", url: "/app/comercial", icon: Target, roles: ["admin", "sales_manager", "seller"] },
     ],
   },
   {
     label: "Financeiro",
     items: [
-      { title: "Faturamento", url: "/app/financeiro", icon: Wallet },
-      { title: "Lucro & DRE", url: "/app/relatorios", icon: LineChart },
+      { title: "Faturamento", url: "/app/financeiro", icon: Wallet, roles: ["admin", "finance_manager"] },
+      { title: "Lucro & DRE", url: "/app/relatorios", icon: LineChart, roles: ["admin"] },
     ],
   },
   {
     label: "Inteligência",
     items: [
       { title: "Assistente 360 IA", url: "/app/assistente", icon: Brain },
-      { title: "Equipe", url: "/app/equipe", icon: UsersRound, adminOnly: true },
-      { title: "Assinatura", url: "/app/assinatura", icon: Crown, adminOnly: true },
+      { title: "Equipe", url: "/app/equipe", icon: UsersRound, roles: ["admin"] },
+      { title: "Assinatura", url: "/app/assinatura", icon: Crown, roles: ["admin"] },
       { title: "Configurações", url: "/app/configuracoes", icon: Settings },
     ],
   },
@@ -54,7 +54,7 @@ export function AppSidebar() {
   const session = useSession();
   const days = trialDaysLeft(session);
   const isPro = session.plan === "pro";
-  const isAdmin = session.role === "admin";
+  const role = session.role;
   const { isMobile, setOpenMobile } = useSidebar();
   const handleNav = () => {
     if (isMobile) setOpenMobile(false);
@@ -80,7 +80,7 @@ export function AppSidebar() {
             <SidebarGroupLabel>{g.label}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {g.items.filter((it) => !it.adminOnly || isAdmin).map((item) => {
+                {g.items.filter((it) => !it.roles || (role && it.roles.includes(role))).map((item) => {
                   const active = path === item.url || (item.url !== "/app" && path.startsWith(item.url));
                   return (
                     <SidebarMenuItem key={item.title}>

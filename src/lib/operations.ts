@@ -63,6 +63,21 @@ export const operationsApi = {
     if (error) throw error;
     return (data ?? []) as InventoryItem[];
   },
+  /**
+   * Catálogo seguro: usado por vendedores (sem custo).
+   * Chama RPC SECURITY DEFINER que só retorna itens ativos da org.
+   */
+  async listCatalog() {
+    const { data, error } = await (supabase as unknown as {
+      rpc: (fn: string) => Promise<{ data: unknown[] | null; error: { message: string } | null }>;
+    }).rpc("list_inventory_catalog");
+    if (error) throw error;
+    return ((data ?? []) as Array<Omit<InventoryItem, "cost_price" | "min_stock">>).map((d) => ({
+      ...d,
+      cost_price: 0,
+      min_stock: 0,
+    })) as InventoryItem[];
+  },
   async createItem(orgId: string, payload: Partial<InventoryItem> & { name: string }) {
     const { error } = await supabase.from("inventory_items").insert({
       org_id: orgId,

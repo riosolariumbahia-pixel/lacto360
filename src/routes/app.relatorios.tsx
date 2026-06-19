@@ -13,8 +13,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { fmtBRL } from "@/lib/utils";
 import { reportsApi, exportReportCSV, type Period } from "@/lib/reports";
 import { toast } from "sonner";
+import { RoleGate } from "@/components/app/role-gate";
 
-export const Route = createFileRoute("/app/relatorios")({ component: RelPage });
+export const Route = createFileRoute("/app/relatorios")({
+  component: () => (
+    <RoleGate roles={["admin"]}>
+      <RelPage />
+    </RoleGate>
+  ),
+});
 
 const COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
 
