@@ -5,10 +5,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app/app-sidebar";
 import { Topbar } from "@/components/app/topbar";
-import { trialDaysLeft, useSession } from "@/lib/session";
+import { trialDaysLeft, useSession, homeForRole } from "@/lib/session";
 import { Sparkles } from "lucide-react";
 import { TrialBanner } from "@/components/app/trial-banner";
 import { supabase } from "@/integrations/supabase/client";
+import { canAccess } from "@/lib/access";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/app")({ component: AppLayout });
 
@@ -28,8 +30,11 @@ function AppLayout() {
       path !== "/app/assinatura"
     ) {
       navigate({ to: "/app/assinatura" });
+    } else if (session.role && !canAccess(path, session.role)) {
+      toast.error("Você não tem permissão para acessar esta área.");
+      navigate({ to: homeForRole(session.role) });
     }
-  }, [session.ready, session.user, session.onboarded, session.plan, session.trialEndsAt, path, navigate]);
+  }, [session.ready, session.user, session.onboarded, session.plan, session.trialEndsAt, session.role, path, navigate]);
 
   useEffect(() => {
     if (!session.user) return;
