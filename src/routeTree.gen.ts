@@ -28,6 +28,7 @@ import { Route as AppComercialRouteImport } from './routes/app.comercial'
 import { Route as AppClientesRouteImport } from './routes/app.clientes'
 import { Route as AppAssistenteRouteImport } from './routes/app.assistente'
 import { Route as AppAssinaturaRouteImport } from './routes/app.assinatura'
+import { Route as AppAdminAuditoriaRouteImport } from './routes/app.admin.auditoria'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -124,6 +125,11 @@ const AppAssinaturaRoute = AppAssinaturaRouteImport.update({
   path: '/assinatura',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminAuditoriaRoute = AppAdminAuditoriaRouteImport.update({
+  id: '/admin/auditoria',
+  path: '/admin/auditoria',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/app/vendas': typeof AppVendasRoute
   '/convite/$token': typeof ConviteTokenRoute
   '/app/': typeof AppIndexRoute
+  '/app/admin/auditoria': typeof AppAdminAuditoriaRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -165,6 +172,7 @@ export interface FileRoutesByTo {
   '/app/vendas': typeof AppVendasRoute
   '/convite/$token': typeof ConviteTokenRoute
   '/app': typeof AppIndexRoute
+  '/app/admin/auditoria': typeof AppAdminAuditoriaRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/app/vendas': typeof AppVendasRoute
   '/convite/$token': typeof ConviteTokenRoute
   '/app/': typeof AppIndexRoute
+  '/app/admin/auditoria': typeof AppAdminAuditoriaRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/app/vendas'
     | '/convite/$token'
     | '/app/'
+    | '/app/admin/auditoria'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -230,6 +240,7 @@ export interface FileRouteTypes {
     | '/app/vendas'
     | '/convite/$token'
     | '/app'
+    | '/app/admin/auditoria'
   id:
     | '__root__'
     | '/'
@@ -251,6 +262,7 @@ export interface FileRouteTypes {
     | '/app/vendas'
     | '/convite/$token'
     | '/app/'
+    | '/app/admin/auditoria'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -398,6 +410,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAssinaturaRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin/auditoria': {
+      id: '/app/admin/auditoria'
+      path: '/admin/auditoria'
+      fullPath: '/app/admin/auditoria'
+      preLoaderRoute: typeof AppAdminAuditoriaRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -414,6 +433,7 @@ interface AppRouteChildren {
   AppRelatoriosRoute: typeof AppRelatoriosRoute
   AppVendasRoute: typeof AppVendasRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppAdminAuditoriaRoute: typeof AppAdminAuditoriaRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -429,6 +449,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppRelatoriosRoute: AppRelatoriosRoute,
   AppVendasRoute: AppVendasRoute,
   AppIndexRoute: AppIndexRoute,
+  AppAdminAuditoriaRoute: AppAdminAuditoriaRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

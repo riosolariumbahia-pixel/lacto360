@@ -20,7 +20,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/admin/auditoria")({
   component: () => (
-    <RoleGate allow={["admin"]}>
+    <RoleGate roles={["admin"]}>
       <AuditPage />
     </RoleGate>
   ),
