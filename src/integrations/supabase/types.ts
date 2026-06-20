@@ -14,11 +14,55 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          org_id: string | null
+          record_id: string | null
+          table_name: string
+          user_id: string | null
+          user_name: string | null
+          user_role: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          org_id?: string | null
+          record_id?: string | null
+          table_name: string
+          user_id?: string | null
+          user_name?: string | null
+          user_role?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          org_id?: string | null
+          record_id?: string | null
+          table_name?: string
+          user_id?: string | null
+          user_name?: string | null
+          user_role?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           city: string | null
           created_at: string
           credit_limit: number
+          deleted_at: string | null
+          deleted_by: string | null
           doc: string | null
           email: string | null
           id: string
@@ -36,6 +80,8 @@ export type Database = {
           city?: string | null
           created_at?: string
           credit_limit?: number
+          deleted_at?: string | null
+          deleted_by?: string | null
           doc?: string | null
           email?: string | null
           id?: string
@@ -53,6 +99,8 @@ export type Database = {
           city?: string | null
           created_at?: string
           credit_limit?: number
+          deleted_at?: string | null
+          deleted_by?: string | null
           doc?: string | null
           email?: string | null
           id?: string
@@ -108,6 +156,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           customer_id: string | null
+          deleted_at: string | null
+          deleted_by: string | null
           description: string
           due_date: string
           id: string
@@ -128,6 +178,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           description: string
           due_date: string
           id?: string
@@ -148,6 +200,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           customer_id?: string | null
+          deleted_at?: string | null
+          deleted_by?: string | null
           description?: string
           due_date?: string
           id?: string
@@ -235,6 +289,8 @@ export type Database = {
           category: string
           cost_price: number
           created_at: string
+          deleted_at: string | null
+          deleted_by: string | null
           id: string
           is_active: boolean
           min_stock: number
@@ -250,6 +306,8 @@ export type Database = {
           category?: string
           cost_price?: number
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           is_active?: boolean
           min_stock?: number
@@ -265,6 +323,8 @@ export type Database = {
           category?: string
           cost_price?: number
           created_at?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           is_active?: boolean
           min_stock?: number
@@ -655,6 +715,8 @@ export type Database = {
           code: string
           created_at: string
           customer_id: string
+          deleted_at: string | null
+          deleted_by: string | null
           delivered_at: string | null
           discount: number
           id: string
@@ -672,6 +734,8 @@ export type Database = {
           code?: string
           created_at?: string
           customer_id: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           delivered_at?: string | null
           discount?: number
           id?: string
@@ -689,6 +753,8 @@ export type Database = {
           code?: string
           created_at?: string
           customer_id?: string
+          deleted_at?: string | null
+          deleted_by?: string | null
           delivered_at?: string | null
           discount?: number
           id?: string
@@ -806,6 +872,17 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: boolean
       }
+      list_deleted_records: {
+        Args: never
+        Returns: {
+          deleted_at: string
+          deleted_by: string
+          deleted_by_name: string
+          id: string
+          label: string
+          table_name: string
+        }[]
+      }
       list_inventory_catalog: {
         Args: never
         Returns: {
@@ -827,6 +904,11 @@ export type Database = {
           id: string
         }[]
       }
+      restore_record: {
+        Args: { _id: string; _table: string }
+        Returns: undefined
+      }
+      soft_delete: { Args: { _id: string; _table: string }; Returns: undefined }
     }
     Enums: {
       app_role:
