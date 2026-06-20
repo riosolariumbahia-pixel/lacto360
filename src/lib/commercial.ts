@@ -71,7 +71,7 @@ export const commercialApi = {
   // ---- Customers ----
   async listCustomers() {
     const { data, error } = await supabase
-      .from("customers").select("*").order("name");
+      .from("customers").select("*").is("deleted_at", null).order("name");
     if (error) throw error;
     return (data ?? []) as Customer[];
   },
@@ -123,7 +123,7 @@ export const commercialApi = {
   // ---- Orders ----
   async listOrders() {
     const { data, error } = await supabase
-      .from("sales_orders").select("*")
+      .from("sales_orders").select("*").is("deleted_at", null)
       .order("ordered_at", { ascending: false }).limit(200);
     if (error) throw error;
     return (data ?? []) as SalesOrder[];
