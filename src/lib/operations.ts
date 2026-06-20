@@ -59,6 +59,7 @@ export const operationsApi = {
     const { data, error } = await supabase
       .from("inventory_items")
       .select("*")
+      .is("deleted_at", null)
       .order("name");
     if (error) throw error;
     return (data ?? []) as InventoryItem[];
