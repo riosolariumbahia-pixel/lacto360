@@ -62,6 +62,7 @@ export const financeApi = {
 
   async listEntries(opts?: { kind?: FinanceEntryKind; from?: string; to?: string }) {
     let q = supabase.from("finance_entries").select("*")
+      .is("deleted_at", null)
       .order("due_date", { ascending: true }).limit(500);
     if (opts?.kind) q = q.eq("kind", opts.kind);
     if (opts?.from) q = q.gte("due_date", opts.from);

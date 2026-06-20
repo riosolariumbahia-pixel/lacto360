@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
-  BarChart3, Boxes, Brain, Factory, LayoutDashboard, LineChart, Target, UsersRound,
+  BarChart3, Boxes, Brain, Factory, LayoutDashboard, LineChart, ShieldCheck, Target, Trash2, UsersRound,
   Settings, ShoppingCart, Users, Wallet, Sparkles, Crown,
 } from "lucide-react";
 import {
@@ -45,6 +45,13 @@ const groups: { label: string; items: NavItem[] }[] = [
       { title: "Equipe", url: "/app/equipe", icon: UsersRound, roles: ["admin"] },
       { title: "Assinatura", url: "/app/assinatura", icon: Crown, roles: ["admin"] },
       { title: "Configurações", url: "/app/configuracoes", icon: Settings },
+    ],
+  },
+  {
+    label: "Administração",
+    items: [
+      { title: "Auditoria", url: "/app/admin/auditoria", icon: ShieldCheck, roles: ["admin"] },
+      { title: "Lixeira", url: "/app/admin/lixeira", icon: Trash2, roles: ["admin"] },
     ],
   },
 ];
