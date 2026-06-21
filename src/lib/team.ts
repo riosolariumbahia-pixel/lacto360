@@ -113,6 +113,26 @@ export const teamApi = {
       },
     });
   },
+  useResendInvitation: (orgId: string | null) => {
+    const qc = useQueryClient();
+    return useMutation({
+      mutationFn: async (id: string) => {
+        // Bump expiry by 7 days and rotate token via gen_random_uuid()
+        const newExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        const { data, error } = await supabase
+          .from("invitations")
+          .update({ expires_at: newExpiry })
+          .eq("id", id)
+          .select("id, email, role, token, created_at, expires_at, accepted_at")
+          .single();
+        if (error) throw error;
+        return data as Invitation;
+      },
+      onSuccess: () => {
+        qc.invalidateQueries({ queryKey: ["team", "invites", orgId] });
+      },
+    });
+  },
 };
 
 export async function getInvitationByToken(token: string) {
