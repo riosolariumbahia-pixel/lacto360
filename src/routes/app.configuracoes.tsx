@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/app/page-header";
 import { sessionApi, trialDaysLeft, useSession } from "@/lib/session";
 import { toast } from "sonner";
+import { SecurityCard } from "@/components/app/security-card";
+import { BackupCard } from "@/components/app/backup-card";
 
 export const Route = createFileRoute("/app/configuracoes")({ component: ConfigPage });
 
@@ -20,6 +22,7 @@ function ConfigPage() {
   const session = useSession();
   const days = trialDaysLeft(session);
   const navigate = useNavigate();
+  const isAdmin = session.role === "admin";
   return (
     <div className="space-y-6">
       <PageHeader title="Configurações" subtitle="Conta, plano e preferências" />
@@ -69,6 +72,11 @@ function ConfigPage() {
             </>
           )}
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <SecurityCard />
+        {isAdmin && <BackupCard />}
       </div>
     </div>
   );
