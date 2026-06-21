@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { Copy, Mail, Trash2, UserPlus } from "lucide-react";
+import { Copy, Mail, RefreshCw, Trash2, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,7 @@ function TeamPage() {
   const invites = teamApi.useInvitations(orgId);
   const createInvite = teamApi.useCreateInvitation(orgId);
   const revokeInvite = teamApi.useRevokeInvitation(orgId);
+  const resendInvite = teamApi.useResendInvitation(orgId);
 
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState("");
@@ -69,6 +70,16 @@ function TeamPage() {
   async function copyLink(token: string) {
     await navigator.clipboard.writeText(inviteLink(token));
     toast.success("Link copiado.");
+  }
+
+  async function resend(id: string) {
+    try {
+      const inv = await resendInvite.mutateAsync(id);
+      await navigator.clipboard.writeText(inviteLink(inv.token)).catch(() => {});
+      toast.success("Convite renovado por mais 7 dias — link copiado.");
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
   }
 
   return (
@@ -166,6 +177,9 @@ function TeamPage() {
           </TableHeader>
           <TableBody>
             {invites.data?.map((inv) => (
+              (() => {
+                const expired = new Date(inv.expires_at).getTime() < Date.now();
+                return (
               <TableRow key={inv.id}>
                 <TableCell className="font-medium">
                   <span className="inline-flex items-center gap-2">
@@ -176,10 +190,14 @@ function TeamPage() {
                 <TableCell><Badge variant="outline">{ROLE_LABEL[inv.role]}</Badge></TableCell>
                 <TableCell className="text-muted-foreground">
                   {new Date(inv.expires_at).toLocaleDateString("pt-BR")}
+                  {expired && <Badge variant="destructive" className="ml-2">Expirado</Badge>}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => copyLink(inv.token)}>
+                  <Button size="sm" variant="ghost" onClick={() => copyLink(inv.token)} disabled={expired}>
                     <Copy className="size-3.5" /> Copiar link
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => resend(inv.id)}>
+                    <RefreshCw className="size-3.5" /> Renovar
                   </Button>
                   <Button
                     size="sm"
@@ -194,6 +212,8 @@ function TeamPage() {
                   </Button>
                 </TableCell>
               </TableRow>
+                );
+              })()
             ))}
             {invites.data?.length === 0 && (
               <TableRow><TableCell colSpan={4} className="text-center text-sm text-muted-foreground">Nenhum convite pendente.</TableCell></TableRow>
