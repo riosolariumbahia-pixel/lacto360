@@ -29,6 +29,7 @@ import { Route as AppClientesRouteImport } from './routes/app.clientes'
 import { Route as AppAssistenteRouteImport } from './routes/app.assistente'
 import { Route as AppAssinaturaRouteImport } from './routes/app.assinatura'
 import { Route as AppAdminLixeiraRouteImport } from './routes/app.admin.lixeira'
+import { Route as AppAdminInteligenciaRouteImport } from './routes/app.admin.inteligencia'
 import { Route as AppAdminAuditoriaRouteImport } from './routes/app.admin.auditoria'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -131,6 +132,11 @@ const AppAdminLixeiraRoute = AppAdminLixeiraRouteImport.update({
   path: '/admin/lixeira',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminInteligenciaRoute = AppAdminInteligenciaRouteImport.update({
+  id: '/admin/inteligencia',
+  path: '/admin/inteligencia',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAdminAuditoriaRoute = AppAdminAuditoriaRouteImport.update({
   id: '/admin/auditoria',
   path: '/admin/auditoria',
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/convite/$token': typeof ConviteTokenRoute
   '/app/': typeof AppIndexRoute
   '/app/admin/auditoria': typeof AppAdminAuditoriaRoute
+  '/app/admin/inteligencia': typeof AppAdminInteligenciaRoute
   '/app/admin/lixeira': typeof AppAdminLixeiraRoute
 }
 export interface FileRoutesByTo {
@@ -180,6 +187,7 @@ export interface FileRoutesByTo {
   '/convite/$token': typeof ConviteTokenRoute
   '/app': typeof AppIndexRoute
   '/app/admin/auditoria': typeof AppAdminAuditoriaRoute
+  '/app/admin/inteligencia': typeof AppAdminInteligenciaRoute
   '/app/admin/lixeira': typeof AppAdminLixeiraRoute
 }
 export interface FileRoutesById {
@@ -204,6 +212,7 @@ export interface FileRoutesById {
   '/convite/$token': typeof ConviteTokenRoute
   '/app/': typeof AppIndexRoute
   '/app/admin/auditoria': typeof AppAdminAuditoriaRoute
+  '/app/admin/inteligencia': typeof AppAdminInteligenciaRoute
   '/app/admin/lixeira': typeof AppAdminLixeiraRoute
 }
 export interface FileRouteTypes {
@@ -229,6 +238,7 @@ export interface FileRouteTypes {
     | '/convite/$token'
     | '/app/'
     | '/app/admin/auditoria'
+    | '/app/admin/inteligencia'
     | '/app/admin/lixeira'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -251,6 +261,7 @@ export interface FileRouteTypes {
     | '/convite/$token'
     | '/app'
     | '/app/admin/auditoria'
+    | '/app/admin/inteligencia'
     | '/app/admin/lixeira'
   id:
     | '__root__'
@@ -274,6 +285,7 @@ export interface FileRouteTypes {
     | '/convite/$token'
     | '/app/'
     | '/app/admin/auditoria'
+    | '/app/admin/inteligencia'
     | '/app/admin/lixeira'
   fileRoutesById: FileRoutesById
 }
@@ -429,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminLixeiraRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin/inteligencia': {
+      id: '/app/admin/inteligencia'
+      path: '/admin/inteligencia'
+      fullPath: '/app/admin/inteligencia'
+      preLoaderRoute: typeof AppAdminInteligenciaRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/admin/auditoria': {
       id: '/app/admin/auditoria'
       path: '/admin/auditoria'
@@ -453,6 +472,7 @@ interface AppRouteChildren {
   AppVendasRoute: typeof AppVendasRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAdminAuditoriaRoute: typeof AppAdminAuditoriaRoute
+  AppAdminInteligenciaRoute: typeof AppAdminInteligenciaRoute
   AppAdminLixeiraRoute: typeof AppAdminLixeiraRoute
 }
 
@@ -470,6 +490,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppVendasRoute: AppVendasRoute,
   AppIndexRoute: AppIndexRoute,
   AppAdminAuditoriaRoute: AppAdminAuditoriaRoute,
+  AppAdminInteligenciaRoute: AppAdminInteligenciaRoute,
   AppAdminLixeiraRoute: AppAdminLixeiraRoute,
 }
 

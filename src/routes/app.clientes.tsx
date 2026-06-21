@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Users, Plus, Loader2, Search, Pencil } from "lucide-react";
+import { Users, Plus, Loader2, Search, Pencil, MessageCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import { PageHeader } from "@/components/app/page-header";
 import { useSession } from "@/lib/session";
 import { commercialApi, firstOfMonth, type Customer } from "@/lib/commercial";
 import { fmtBRL } from "@/lib/operations";
+import { openWhatsapp, msgBoasVindas } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/app/clientes")({ component: ClientesPage });
 
@@ -118,7 +119,7 @@ function ClientesPage() {
                   <th>Cidade</th>
                   <th>Telefone</th>
                   <th>Status</th>
-                  {canWrite && <th></th>}
+                  <th className="text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -135,11 +136,27 @@ function ClientesPage() {
                         {c.status === "ativo" ? "Ativo" : "Inativo"}
                       </Badge>
                     </td>
-                    {canWrite && orgId && (
-                      <td>
-                        <CustomerDialog orgId={orgId} customer={c} />
-                      </td>
-                    )}
+                    <td className="text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {c.phone && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title="Abrir WhatsApp"
+                            onClick={() => {
+                              const ok = openWhatsapp(
+                                c.phone,
+                                msgBoasVindas(c.name.split(" ")[0], "nossa empresa"),
+                              );
+                              if (!ok) toast.error("Telefone inválido para WhatsApp.");
+                            }}
+                          >
+                            <MessageCircle className="size-3.5 text-success" />
+                          </Button>
+                        )}
+                        {canWrite && orgId && <CustomerDialog orgId={orgId} customer={c} />}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
