@@ -119,7 +119,7 @@ function ClientesPage() {
                   <th>Cidade</th>
                   <th>Telefone</th>
                   <th>Status</th>
-                  {canWrite && <th></th>}
+                  <th className="text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
