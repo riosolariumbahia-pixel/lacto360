@@ -5,11 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles } from "lucide-react";
 import { sessionApi } from "@/lib/session";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/login")({ component: LoginPage });
+export const Route = createFileRoute("/login")({
+  validateSearch: (s: Record<string, unknown>): { invite?: string } => {
+    const invite = typeof s.invite === "string" ? s.invite : undefined;
+    return invite ? { invite } : {};
+  },
+  component: LoginPage,
+});
 
 function LoginPage() {
+  const { invite } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,11 +27,23 @@ function LoginPage() {
     e.preventDefault();
     setLoading(true);
     const error = await sessionApi.signIn(email, pw);
-    setLoading(false);
     if (error) {
+      setLoading(false);
       toast.error(error.message === "Invalid login credentials" ? "E-mail ou senha incorretos." : error.message);
       return;
     }
+    if (invite) {
+      const { error: invErr } = await supabase.rpc("accept_invitation", { _token: invite });
+      setLoading(false);
+      if (invErr) {
+        toast.error(`Login ok, mas não aceitei o convite: ${invErr.message}`);
+      } else {
+        toast.success("Convite aceito!");
+      }
+      window.location.assign("/app");
+      return;
+    }
+    setLoading(false);
     navigate({ to: "/app" });
   }
 
