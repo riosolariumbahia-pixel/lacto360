@@ -26,7 +26,10 @@ export const Route = createFileRoute("/app/clientes")({ component: ClientesPage 
 function ClientesPage() {
   const session = useSession();
   const orgId = session.orgId;
-  const canWrite = session.role === "admin" || session.role === "sales_manager";
+  const canWrite =
+    session.role === "admin" ||
+    session.role === "sales_manager" ||
+    session.role === "seller";
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"todos" | "ativo" | "inativo">("todos");
 
@@ -198,7 +201,16 @@ function CustomerDialog({ orgId, customer }: { orgId: string; customer?: Custome
       qc.invalidateQueries({ queryKey: ["customers"] });
       setOpen(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      const msg = e.message || "";
+      if (/row-level security|permission/i.test(msg)) {
+        toast.error("Sem permissão para esta operação. Verifique seu perfil de acesso.");
+      } else {
+        toast.error(`Não foi possível salvar: ${msg}`);
+      }
+      // Log detalhado para auditoria/dev
+      console.error("[clientes] save error", e);
+    },
   });
 
   return (
