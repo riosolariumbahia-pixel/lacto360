@@ -42,6 +42,13 @@ function CadastroPage() {
     });
     if (error) {
       setLoading(false);
+      // E-mail já existe → redirecionar para login preservando o convite
+      const msg = (error.message || "").toLowerCase();
+      if (invite && (msg.includes("already") || msg.includes("registered") || msg.includes("exists"))) {
+        toast.info("E-mail já cadastrado. Entre para aceitar o convite.");
+        navigate({ to: "/login", search: { invite } });
+        return;
+      }
       toast.error(error.message);
       return;
     }
@@ -50,11 +57,12 @@ function CadastroPage() {
     setLoading(false);
     if (signInError) {
       toast.success("Conta criada! Faça login para continuar.");
-      navigate({ to: "/login" });
+      navigate({ to: "/login", search: invite ? { invite } : {} });
       return;
     }
     toast.success("Conta criada com sucesso!");
-    navigate({ to: "/app" });
+    // Recarrega para refletir papel/organização novos
+    window.location.assign("/app");
   }
 
   return (
