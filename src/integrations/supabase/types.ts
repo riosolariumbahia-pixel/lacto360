@@ -847,6 +847,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_invitation: {
+        Args: { _token: string }
+        Returns: {
+          org_id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       current_org_id: { Args: never; Returns: string }
       get_invite_by_token: {
         Args: { _token: string }
