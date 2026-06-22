@@ -3,12 +3,16 @@ import { useEffect, useState } from "react";
 import { Sparkles, Check, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getInvitationByToken, ROLE_LABEL } from "@/lib/team";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/convite/$token")({ component: InvitePage });
 
 function InvitePage() {
   const { token } = Route.useParams();
   const navigate = useNavigate();
+  const [accepting, setAccepting] = useState(false);
+  const [currentEmail, setCurrentEmail] = useState<string | null>(null);
   const [state, setState] = useState<
     | { kind: "loading" }
     | { kind: "ok"; orgName: string; role: string; email: string }
@@ -18,6 +22,8 @@ function InvitePage() {
 
   useEffect(() => {
     (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      setCurrentEmail(u.user?.email ?? null);
       const inv = await getInvitationByToken(token).catch(() => null);
       if (!inv) return setState({ kind: "missing" });
       if (inv.accepted_at || new Date(inv.expires_at) < new Date()) return setState({ kind: "expired" });
@@ -29,6 +35,19 @@ function InvitePage() {
       });
     })();
   }, [token]);
+
+  async function acceptForLoggedIn() {
+    setAccepting(true);
+    const { error } = await supabase.rpc("accept_invitation", { _token: token });
+    setAccepting(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Convite aceito! Redirecionando…");
+    // Força recarregar a sessão com novo papel/organização
+    window.location.assign("/app");
+  }
 
   return (
     <div className="grid min-h-screen place-items-center bg-gradient-hero p-6">
@@ -72,21 +91,43 @@ function InvitePage() {
             <div className="rounded-xl border bg-muted/40 p-3 text-sm">
               <Check className="mr-2 inline size-3.5 text-primary" /> Convite para <span className="font-medium">{state.email}</span>
             </div>
-            <Button
-              className="w-full bg-gradient-primary"
-              onClick={() =>
-                navigate({
-                  to: "/cadastro",
-                  search: { invite: token },
-                })
-              }
-            >
-              Aceitar e criar conta
-            </Button>
-            <p className="text-center text-xs text-muted-foreground">
-              Já tem conta?{" "}
-              <Link to="/login" className="font-semibold text-primary">Entrar</Link>
-            </p>
+            {currentEmail && currentEmail.toLowerCase() === state.email.toLowerCase() ? (
+              <Button className="w-full bg-gradient-primary" disabled={accepting} onClick={acceptForLoggedIn}>
+                {accepting ? "Aceitando…" : "Aceitar convite agora"}
+              </Button>
+            ) : currentEmail ? (
+              <div className="space-y-2">
+                <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                  Você está conectado como <b>{currentEmail}</b>. Saia e entre com <b>{state.email}</b> para aceitar este convite.
+                </div>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }}
+                >
+                  Sair desta conta
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Button
+                  className="w-full bg-gradient-primary"
+                  onClick={() => navigate({ to: "/cadastro", search: { invite: token } })}
+                >
+                  Aceitar e criar conta
+                </Button>
+                <p className="text-center text-xs text-muted-foreground">
+                  Já tem conta?{" "}
+                  <Link
+                    to="/login"
+                    search={{ invite: token } as never}
+                    className="font-semibold text-primary"
+                  >
+                    Entrar
+                  </Link>
+                </p>
+              </>
+            )}
           </div>
         )}
       </div>
