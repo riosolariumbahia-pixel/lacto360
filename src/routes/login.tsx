@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles } from "lucide-react";
 import { sessionApi } from "@/lib/session";
-import { supabase } from "@/integrations/supabase/client";
+import { acceptInvitationByToken } from "@/lib/team";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/login")({
@@ -33,12 +33,15 @@ function LoginPage() {
       return;
     }
     if (invite) {
-      const { error: invErr } = await supabase.rpc("accept_invitation", { _token: invite });
-      setLoading(false);
-      if (invErr) {
-        toast.error(`Login ok, mas não aceitei o convite: ${invErr.message}`);
-      } else {
+      try {
+        await acceptInvitationByToken(invite);
+        console.info("[login] convite aceito após autenticação");
         toast.success("Convite aceito!");
+      } catch (err) {
+        console.error("[login] erro ao aceitar convite", err);
+        toast.error(`Login ok, mas não aceitei o convite: ${(err as Error).message}`);
+      } finally {
+        setLoading(false);
       }
       window.location.assign("/app");
       return;
