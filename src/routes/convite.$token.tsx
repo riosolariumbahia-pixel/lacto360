@@ -16,6 +16,7 @@ function InvitePage() {
   const [state, setState] = useState<
     | { kind: "loading" }
     | { kind: "ok"; orgName: string; role: string; email: string }
+    | { kind: "accepted"; email: string }
     | { kind: "expired" }
     | { kind: "missing" }
     | { kind: "error"; message: string }
@@ -40,7 +41,8 @@ function InvitePage() {
         const inv = await getInvitationByToken(token);
         if (!active) return;
         if (!inv) return setState({ kind: "missing" });
-        if (inv.accepted_at || new Date(inv.expires_at) < new Date()) return setState({ kind: "expired" });
+        if (inv.accepted_at) return setState({ kind: "accepted", email: inv.email });
+        if (new Date(inv.expires_at) < new Date()) return setState({ kind: "expired" });
         console.info("[convite] convite válido", { id: inv.id, role: inv.role });
         setState({
           kind: "ok",
@@ -104,6 +106,19 @@ function InvitePage() {
             <h2 className="font-serif text-2xl">Convite inválido</h2>
             <p className="text-sm text-muted-foreground">Este link não existe ou já foi usado.</p>
             <Button asChild variant="outline" className="mt-2"><Link to="/">Voltar ao início</Link></Button>
+          </div>
+        )}
+
+        {state.kind === "accepted" && (
+          <div className="space-y-3 text-center">
+            <Check className="mx-auto size-8 text-primary" />
+            <h2 className="font-serif text-2xl">Convite já aceito</h2>
+            <p className="text-sm text-muted-foreground">A conta {state.email} já foi vinculada à equipe.</p>
+            {currentEmail?.toLowerCase() === state.email.toLowerCase() ? (
+              <Button className="mt-2 w-full bg-gradient-primary" onClick={() => window.location.assign("/app")}>Entrar no sistema</Button>
+            ) : (
+              <Button asChild className="mt-2 w-full bg-gradient-primary"><Link to="/login">Entrar</Link></Button>
+            )}
           </div>
         )}
 
