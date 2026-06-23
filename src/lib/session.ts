@@ -234,6 +234,8 @@ export function homeForRole(role: AppRole | null): string {
       return "/app/vendas";
     case "seller":
       return "/app/vendas";
+    case "finance_manager":
+      return "/app/financeiro";
     case "admin":
     default:
       return "/app";
