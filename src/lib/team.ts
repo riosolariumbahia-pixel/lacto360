@@ -19,6 +19,7 @@ export type Invitation = {
   created_at: string;
   expires_at: string;
   accepted_at: string | null;
+  status?: "pendente" | "aceito" | "expirado";
 };
 
 export const ROLE_LABEL: Record<AppRole, string> = {
@@ -55,10 +56,9 @@ async function listMembers(orgId: string): Promise<Member[]> {
 
 async function listInvitations(orgId: string): Promise<Invitation[]> {
   const { data, error } = await supabase
-    .from("invitations")
-    .select("id, email, role, token, created_at, expires_at, accepted_at")
+    .from("invitation_statuses")
+    .select("id, email, role, token, created_at, expires_at, accepted_at, status")
     .eq("org_id", orgId)
-    .is("accepted_at", null)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []) as Invitation[];
@@ -136,11 +136,18 @@ export const teamApi = {
 };
 
 export async function getInvitationByToken(token: string) {
+  console.info("[convite] token recebido", { prefix: token.slice(0, 8), length: token.length });
   const { data, error } = await supabase
     .rpc("get_invite_by_token", { _token: token });
   if (error) throw error;
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) return null;
+  console.info("[convite] convite encontrado", {
+    id: row.id,
+    role: row.role,
+    accepted: !!row.accepted_at,
+    expires_at: row.expires_at,
+  });
   return {
     id: row.id as string,
     email: row.email as string,
@@ -149,4 +156,16 @@ export async function getInvitationByToken(token: string) {
     accepted_at: row.accepted_at as string | null,
     org_name: (row.org_name as string) ?? "Equipe",
   };
+}
+
+export async function acceptInvitationByToken(token: string) {
+  console.info("[convite] aceitando convite", { prefix: token.slice(0, 8), length: token.length });
+  const { data, error } = await supabase.rpc("accept_invitation", { _token: token });
+  if (error) {
+    console.error("[convite] erro ao aceitar convite", error);
+    throw error;
+  }
+  const row = Array.isArray(data) ? data[0] : data;
+  console.info("[convite] convite aceito", row);
+  return row;
 }

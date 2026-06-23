@@ -40,6 +40,8 @@ const listeners = new Set<() => void>();
 let cache: Session = DEFAULT;
 let initialized = false;
 
+const MANAGER_ONBOARDED_ROLES: AppRole[] = ["sales_manager", "op_manager", "finance_manager", "seller"];
+
 function emit(next: Session) {
   cache = next;
   listeners.forEach((l) => l());
@@ -60,9 +62,11 @@ function clearOnboardingCache() {
 
 async function hydrate(userId: string | null, email: string | null) {
   if (!userId) {
+    console.info("[sessao] sem usuário autenticado");
     emit({ ...DEFAULT, ready: true });
     return;
   }
+  console.info("[sessao] hidratando sessão", { userId, email });
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name, org_id, organizations(name, plan, trial_ends_at, onboarded_at)")
@@ -81,10 +85,20 @@ async function hydrate(userId: string | null, email: string | null) {
     | undefined;
   const org = Array.isArray(orgRaw) ? (orgRaw[0] ?? null) : (orgRaw ?? null);
   const trialEndsAt = org?.trial_ends_at ? new Date(org.trial_ends_at).getTime() : null;
+  const role = (roles?.[0]?.role as AppRole | undefined) ?? null;
   const onboarded =
+    (role ? MANAGER_ONBOARDED_ROLES.includes(role) : false) ||
     !!org?.onboarded_at ||
     (typeof window !== "undefined" &&
       window.localStorage.getItem(onboardKey(profile?.org_id ?? null, userId)) === "1");
+
+  console.info("[sessao] perfil e papel carregados", {
+    userId,
+    hasProfile: !!profile,
+    orgId: profile?.org_id ?? null,
+    role,
+    onboarded,
+  });
 
   emit({
     ready: true,
@@ -95,7 +109,7 @@ async function hydrate(userId: string | null, email: string | null) {
       laticinio: org?.name ?? "Meu laticínio",
     },
     orgId: profile?.org_id ?? null,
-    role: (roles?.[0]?.role as AppRole | undefined) ?? null,
+    role,
     plan: org?.plan === "pro" ? "pro" : "trial",
     trialEndsAt,
     trialStartedAt: trialEndsAt ? trialEndsAt - 7 * 86400000 : null,
@@ -138,7 +152,10 @@ export const sessionApi = {
     clearOnboardingCache();
     emit({ ...DEFAULT, ready: true });
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (!error) await hydrate(data.user?.id ?? null, data.user?.email ?? email);
+    if (!error) {
+      console.info("[login] sessão criada", { userId: data.user?.id ?? null, email: data.user?.email ?? email });
+      await hydrate(data.user?.id ?? null, data.user?.email ?? email);
+    }
     return error;
   },
   async signUp(opts: { fullName: string; email: string; password: string; companyName: string; inviteToken?: string }) {
@@ -167,6 +184,7 @@ export const sessionApi = {
         },
       },
     });
+    if (!error) console.info("[cadastro] usuário solicitado/criado", { email: opts.email, hasInvite: !!opts.inviteToken });
     return error;
   },
   async signOut() {
@@ -216,6 +234,8 @@ export function homeForRole(role: AppRole | null): string {
       return "/app/vendas";
     case "seller":
       return "/app/vendas";
+    case "finance_manager":
+      return "/app/financeiro";
     case "admin":
     default:
       return "/app";

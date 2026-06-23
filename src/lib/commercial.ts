@@ -72,14 +72,20 @@ export const commercialApi = {
   async listCustomers() {
     const { data, error } = await supabase
       .from("customers").select("*").is("deleted_at", null).order("name");
-    if (error) throw error;
+    if (error) {
+      console.error("[clientes] erro ao consultar clientes", error);
+      throw error;
+    }
+    console.info("[clientes] consulta concluída", { total: data?.length ?? 0 });
     return (data ?? []) as Customer[];
   },
   async createCustomer(orgId: string, p: Partial<Customer> & { name: string }) {
     const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) throw new Error("Sessão inválida para cadastrar cliente.");
+    console.info("[clientes] criando cliente", { orgId, ownerId: auth.user.id, name: p.name });
     const { error } = await supabase.from("customers").insert({
       org_id: orgId,
-      owner_id: auth.user?.id ?? null,
+      owner_id: auth.user.id,
       name: p.name,
       doc: p.doc ?? null,
       email: p.email ?? null,
@@ -91,11 +97,20 @@ export const commercialApi = {
       payment_terms: p.payment_terms ?? null,
       notes: p.notes ?? null,
     });
-    if (error) throw error;
+    if (error) {
+      console.error("[clientes] erro ao criar cliente", error);
+      throw error;
+    }
+    console.info("[clientes] cliente criado", { name: p.name });
   },
   async updateCustomer(id: string, p: Partial<Customer>) {
+    console.info("[clientes] editando cliente", { id });
     const { error } = await supabase.from("customers").update(p).eq("id", id);
-    if (error) throw error;
+    if (error) {
+      console.error("[clientes] erro ao editar cliente", error);
+      throw error;
+    }
+    console.info("[clientes] cliente editado", { id });
   },
 
   // ---- Sellers (profiles + roles) ----

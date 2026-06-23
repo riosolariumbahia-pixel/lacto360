@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Sparkles, Check, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getInvitationByToken, ROLE_LABEL } from "@/lib/team";
+import { acceptInvitationByToken, getInvitationByToken, ROLE_LABEL } from "@/lib/team";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -16,37 +16,65 @@ function InvitePage() {
   const [state, setState] = useState<
     | { kind: "loading" }
     | { kind: "ok"; orgName: string; role: string; email: string }
+    | { kind: "accepted"; email: string }
     | { kind: "expired" }
     | { kind: "missing" }
+    | { kind: "error"; message: string }
   >({ kind: "loading" });
 
   useEffect(() => {
+    let active = true;
+    const timeout = window.setTimeout(() => {
+      if (active) {
+        console.error("[convite] timeout ao validar convite", { prefix: token.slice(0, 8) });
+        setState({ kind: "error", message: "A validação demorou demais. Atualize a página ou peça um novo link." });
+      }
+    }, 12000);
     (async () => {
-      const { data: u } = await supabase.auth.getUser();
-      setCurrentEmail(u.user?.email ?? null);
-      const inv = await getInvitationByToken(token).catch(() => null);
-      if (!inv) return setState({ kind: "missing" });
-      if (inv.accepted_at || new Date(inv.expires_at) < new Date()) return setState({ kind: "expired" });
-      setState({
-        kind: "ok",
-        orgName: inv.org_name,
-        role: ROLE_LABEL[inv.role],
-        email: inv.email,
-      });
+      try {
+        console.info("[convite] iniciando validação", { prefix: token.slice(0, 8) });
+        const { data: u, error: userError } = await supabase.auth.getUser();
+        if (userError) console.warn("[convite] sessão ausente ou inválida", userError);
+        if (!active) return;
+        setCurrentEmail(u.user?.email ?? null);
+        console.info("[convite] sessão verificada", { email: u.user?.email ?? null });
+        const inv = await getInvitationByToken(token);
+        if (!active) return;
+        if (!inv) return setState({ kind: "missing" });
+        if (inv.accepted_at) return setState({ kind: "accepted", email: inv.email });
+        if (new Date(inv.expires_at) < new Date()) return setState({ kind: "expired" });
+        console.info("[convite] convite válido", { id: inv.id, role: inv.role });
+        setState({
+          kind: "ok",
+          orgName: inv.org_name,
+          role: ROLE_LABEL[inv.role],
+          email: inv.email,
+        });
+      } catch (err) {
+        console.error("[convite] falha na validação", err);
+        if (active) setState({ kind: "error", message: (err as Error).message || "Não foi possível validar este convite." });
+      } finally {
+        window.clearTimeout(timeout);
+      }
     })();
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+    };
   }, [token]);
 
   async function acceptForLoggedIn() {
     setAccepting(true);
-    const { error } = await supabase.rpc("accept_invitation", { _token: token });
-    setAccepting(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      await acceptInvitationByToken(token);
+      console.info("[convite] redirecionando após aceite");
+      toast.success("Convite aceito! Redirecionando…");
+      window.location.assign("/app");
+    } catch (err) {
+      toast.error((err as Error).message);
+    } finally {
+      setAccepting(false);
     }
-    toast.success("Convite aceito! Redirecionando…");
-    // Força recarregar a sessão com novo papel/organização
-    window.location.assign("/app");
   }
 
   return (
@@ -63,12 +91,34 @@ function InvitePage() {
           <p className="text-sm text-muted-foreground">Validando convite...</p>
         )}
 
+        {state.kind === "error" && (
+          <div className="space-y-3 text-center">
+            <AlertTriangle className="mx-auto size-8 text-destructive" />
+            <h2 className="font-serif text-2xl">Falha ao validar convite</h2>
+            <p className="text-sm text-muted-foreground">{state.message}</p>
+            <Button variant="outline" className="mt-2" onClick={() => window.location.reload()}>Tentar novamente</Button>
+          </div>
+        )}
+
         {state.kind === "missing" && (
           <div className="space-y-3 text-center">
             <AlertTriangle className="mx-auto size-8 text-destructive" />
             <h2 className="font-serif text-2xl">Convite inválido</h2>
             <p className="text-sm text-muted-foreground">Este link não existe ou já foi usado.</p>
             <Button asChild variant="outline" className="mt-2"><Link to="/">Voltar ao início</Link></Button>
+          </div>
+        )}
+
+        {state.kind === "accepted" && (
+          <div className="space-y-3 text-center">
+            <Check className="mx-auto size-8 text-primary" />
+            <h2 className="font-serif text-2xl">Convite já aceito</h2>
+            <p className="text-sm text-muted-foreground">A conta {state.email} já foi vinculada à equipe.</p>
+            {currentEmail?.toLowerCase() === state.email.toLowerCase() ? (
+              <Button className="mt-2 w-full bg-gradient-primary" onClick={() => window.location.assign("/app")}>Entrar no sistema</Button>
+            ) : (
+              <Button asChild className="mt-2 w-full bg-gradient-primary"><Link to="/login">Entrar</Link></Button>
+            )}
           </div>
         )}
 

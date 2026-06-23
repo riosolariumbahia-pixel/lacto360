@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend,
   Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
@@ -37,6 +38,12 @@ function DashboardPage() {
   const monthlyQ = useQuery({ queryKey: ["dashboard", "monthly"], queryFn: getMonthlyFinance, staleTime: 30_000 });
   const channelsQ = useQuery({ queryKey: ["dashboard", "channels"], queryFn: getSalesChannels, staleTime: 30_000 });
   const topClientsQ = useQuery({ queryKey: ["dashboard", "topClients"], queryFn: () => getTopClients(5), staleTime: 30_000 });
+
+  useEffect(() => {
+    if (session.ready && session.user) {
+      console.info("[dashboard] carregado", { userId: session.user.id, orgId: session.orgId, role: session.role });
+    }
+  }, [session.ready, session.user, session.orgId, session.role]);
 
   const k = kpisQ.data;
   const weekly = weeklyQ.data ?? [];

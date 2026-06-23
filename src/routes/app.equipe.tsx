@@ -164,13 +164,14 @@ function TeamPage() {
 
       <div className="rounded-2xl border bg-card">
         <div className="border-b p-5">
-          <h3 className="text-sm font-semibold">Convites pendentes ({invites.data?.length ?? 0})</h3>
+          <h3 className="text-sm font-semibold">Convites ({invites.data?.length ?? 0})</h3>
         </div>
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>E-mail</TableHead>
               <TableHead>Papel</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Expira em</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
@@ -178,7 +179,8 @@ function TeamPage() {
           <TableBody>
             {invites.data?.map((inv) => (
               (() => {
-                const expired = new Date(inv.expires_at).getTime() < Date.now();
+                const status = inv.status ?? (inv.accepted_at ? "aceito" : new Date(inv.expires_at).getTime() < Date.now() ? "expirado" : "pendente");
+                const canUseLink = status === "pendente";
                 return (
               <TableRow key={inv.id}>
                 <TableCell className="font-medium">
@@ -188,12 +190,16 @@ function TeamPage() {
                   </span>
                 </TableCell>
                 <TableCell><Badge variant="outline">{ROLE_LABEL[inv.role]}</Badge></TableCell>
+                <TableCell>
+                  <Badge variant={status === "aceito" ? "secondary" : status === "expirado" ? "destructive" : "outline"}>
+                    {status[0].toUpperCase() + status.slice(1)}
+                  </Badge>
+                </TableCell>
                 <TableCell className="text-muted-foreground">
                   {new Date(inv.expires_at).toLocaleDateString("pt-BR")}
-                  {expired && <Badge variant="destructive" className="ml-2">Expirado</Badge>}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => copyLink(inv.token)} disabled={expired}>
+                  <Button size="sm" variant="ghost" onClick={() => copyLink(inv.token)} disabled={!canUseLink}>
                     <Copy className="size-3.5" /> Copiar link
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => resend(inv.id)}>
@@ -216,7 +222,7 @@ function TeamPage() {
               })()
             ))}
             {invites.data?.length === 0 && (
-              <TableRow><TableCell colSpan={4} className="text-center text-sm text-muted-foreground">Nenhum convite pendente.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground">Nenhum convite cadastrado.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>

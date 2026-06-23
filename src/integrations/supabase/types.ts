@@ -844,7 +844,53 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      invitation_statuses: {
+        Row: {
+          accepted_at: string | null
+          created_at: string | null
+          email: string | null
+          expires_at: string | null
+          id: string | null
+          invited_by: string | null
+          org_id: string | null
+          role: Database["public"]["Enums"]["app_role"] | null
+          status: string | null
+          token: string | null
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email?: string | null
+          expires_at?: string | null
+          id?: string | null
+          invited_by?: string | null
+          org_id?: string | null
+          role?: Database["public"]["Enums"]["app_role"] | null
+          status?: never
+          token?: string | null
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string | null
+          email?: string | null
+          expires_at?: string | null
+          id?: string | null
+          invited_by?: string | null
+          org_id?: string | null
+          role?: Database["public"]["Enums"]["app_role"] | null
+          status?: never
+          token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       accept_invitation: {

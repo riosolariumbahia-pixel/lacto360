@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sparkles, Check } from "lucide-react";
 import { sessionApi } from "@/lib/session";
+import { acceptInvitationByToken } from "@/lib/team";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/cadastro")({
@@ -59,6 +60,17 @@ function CadastroPage() {
       toast.success("Conta criada! Faça login para continuar.");
       navigate({ to: "/login", search: invite ? { invite } : {} });
       return;
+    }
+    if (invite) {
+      try {
+        await acceptInvitationByToken(invite);
+        console.info("[cadastro] convite confirmado após cadastro/login");
+      } catch (err) {
+        console.error("[cadastro] erro ao confirmar convite", err);
+        toast.error(`Conta criada, mas o convite não foi concluído: ${(err as Error).message}`);
+        navigate({ to: "/convite/$token", params: { token: invite } });
+        return;
+      }
     }
     toast.success("Conta criada com sucesso!");
     // Recarrega para refletir papel/organização novos
