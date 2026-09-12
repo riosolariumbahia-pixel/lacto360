@@ -34,47 +34,43 @@ function CadastroPage() {
       return;
     }
     setLoading(true);
-    const error = await sessionApi.signUp({
-      fullName: name,
-      email,
-      password,
-      companyName: laticinio || `${name} Laticínios`,
-      inviteToken: invite,
-    });
-    if (error) {
-      setLoading(false);
-      // E-mail já existe → redirecionar para login preservando o convite
-      const msg = (error.message || "").toLowerCase();
-      if (invite && (msg.includes("already") || msg.includes("registered") || msg.includes("exists"))) {
-        toast.info("E-mail já cadastrado. Entre para aceitar o convite.");
-        navigate({ to: "/login", search: { invite } });
+    try {
+      const error = await sessionApi.signUp({
+        fullName: name,
+        email,
+        password,
+        companyName: laticinio || `${name} Laticínios`,
+        inviteToken: invite,
+      });
+      if (error) {
+        const msg = (error.message || "").toLowerCase();
+        if (invite && (msg.includes("already") || msg.includes("registered") || msg.includes("exists"))) {
+          toast.info("E-mail já cadastrado. Entre para aceitar o convite.");
+          navigate({ to: "/login", search: { invite } });
+          return;
+        }
+        toast.error(error.message);
         return;
       }
-      toast.error(error.message);
-      return;
-    }
-    // Auto-login após cadastro (e-mail é auto-confirmado).
-    const signInError = await sessionApi.signIn(email, password);
-    setLoading(false);
-    if (signInError) {
-      toast.success("Conta criada! Faça login para continuar.");
-      navigate({ to: "/login", search: invite ? { invite } : {} });
-      return;
-    }
-    if (invite) {
-      try {
+      const signInError = await sessionApi.signIn(email, password);
+      if (signInError) {
+        toast.success("Conta criada! Faça login para continuar.");
+        navigate({ to: "/login", search: invite ? { invite } : {} });
+        return;
+      }
+      if (invite) {
         await acceptInvitationByToken(invite);
         console.info("[cadastro] convite confirmado após cadastro/login");
-      } catch (err) {
-        console.error("[cadastro] erro ao confirmar convite", err);
-        toast.error(`Conta criada, mas o convite não foi concluído: ${(err as Error).message}`);
-        navigate({ to: "/convite/$token", params: { token: invite } });
-        return;
       }
+      toast.success("Conta criada com sucesso!");
+      window.location.assign("/app");
+    } catch (error) {
+      console.error("[cadastro] erro durante a criação", error);
+      toast.error(invite ? `Conta criada, mas o convite não foi concluído: ${(error as Error).message}` : "Não foi possível concluir o cadastro. Tente novamente.");
+      if (invite) navigate({ to: "/convite/$token", params: { token: invite } });
+    } finally {
+      setLoading(false);
     }
-    toast.success("Conta criada com sucesso!");
-    // Recarrega para refletir papel/organização novos
-    window.location.assign("/app");
   }
 
   return (
