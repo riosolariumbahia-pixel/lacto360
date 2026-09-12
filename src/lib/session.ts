@@ -39,6 +39,7 @@ const DEFAULT: Session = {
 const listeners = new Set<() => void>();
 let cache: Session = DEFAULT;
 let initialized = false;
+let hydrationVersion = 0;
 
 const MANAGER_ONBOARDED_ROLES: AppRole[] = ["sales_manager", "op_manager", "finance_manager", "seller"];
 
@@ -61,22 +62,32 @@ function clearOnboardingCache() {
 }
 
 async function hydrate(userId: string | null, email: string | null) {
+  const version = ++hydrationVersion;
   if (!userId) {
     console.info("[sessao] sem usuário autenticado");
     emit({ ...DEFAULT, ready: true });
     return;
   }
   console.info("[sessao] hidratando sessão", { userId, email });
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("full_name, org_id, organizations(name, plan, trial_ends_at, onboarded_at)")
     .eq("id", userId)
     .maybeSingle();
-  const { data: roles } = await supabase
+  const { data: roles, error: rolesError } = await supabase
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
     .limit(1);
+
+  if (version !== hydrationVersion) return;
+  if (profileError || rolesError) {
+    console.error("[sessao] falha ao carregar perfil", profileError ?? rolesError);
+    throw profileError ?? rolesError;
+  }
+  if (!profile?.org_id || !roles?.[0]?.role) {
+    throw new Error("Sua conta ainda não possui empresa ou permissão vinculada.");
+  }
 
   const orgRaw = profile?.organizations as
     | { name: string; plan: string; trial_ends_at: string; onboarded_at: string | null }
@@ -120,11 +131,24 @@ async function hydrate(userId: string | null, email: string | null) {
 function init() {
   if (initialized || typeof window === "undefined") return;
   initialized = true;
-  supabase.auth.onAuthStateChange((_e, sess) => {
-    void hydrate(sess?.user?.id ?? null, sess?.user?.email ?? null);
+  supabase.auth.onAuthStateChange((event, sess) => {
+    if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
+    window.setTimeout(() => {
+      void hydrate(sess?.user?.id ?? null, sess?.user?.email ?? null).catch((error) => {
+        console.error("[sessao] não foi possível atualizar a sessão", error);
+        emit({ ...DEFAULT, ready: true });
+      });
+    }, 0);
   });
-  void supabase.auth.getSession().then(({ data }) => {
-    void hydrate(data.session?.user?.id ?? null, data.session?.user?.email ?? null);
+  void supabase.auth.getUser().then(({ data, error }) => {
+    if (error) {
+      emit({ ...DEFAULT, ready: true });
+      return;
+    }
+    void hydrate(data.user?.id ?? null, data.user?.email ?? null).catch((hydrateError) => {
+      console.error("[sessao] falha na inicialização", hydrateError);
+      emit({ ...DEFAULT, ready: true });
+    });
   });
 }
 
@@ -145,18 +169,23 @@ export const sessionApi = {
   get: () => cache,
   async signIn(email: string, password: string) {
     try {
-      await supabase.auth.signOut({ scope: "local" });
-    } catch {
-      // ignore stale sessions
-    }
-    clearOnboardingCache();
-    emit({ ...DEFAULT, ready: true });
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (!error) {
+      try {
+        await supabase.auth.signOut({ scope: "local" });
+      } catch {
+        // ignore stale sessions
+      }
+      clearOnboardingCache();
+      emit({ ...DEFAULT, ready: true });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) return error;
       console.info("[login] sessão criada", { userId: data.user?.id ?? null, email: data.user?.email ?? email });
       await hydrate(data.user?.id ?? null, data.user?.email ?? email);
+      return null;
+    } catch (error) {
+      console.error("[login] falha inesperada", error);
+      emit({ ...DEFAULT, ready: true });
+      return error instanceof Error ? error : new Error("Não foi possível entrar. Tente novamente.");
     }
-    return error;
   },
   async signUp(opts: { fullName: string; email: string; password: string; companyName: string; inviteToken?: string }) {
     const redirectTo =
@@ -166,31 +195,41 @@ export const sessionApi = {
     // então sem signOut o navegador continua logado como o usuário anterior
     // e exibe os dados da organização errada).
     try {
-      await supabase.auth.signOut({ scope: "local" });
-    } catch {
-      // ignore
-    }
-    clearOnboardingCache();
-    emit({ ...DEFAULT, ready: true });
-    const { error } = await supabase.auth.signUp({
-      email: opts.email,
-      password: opts.password,
-      options: {
-        emailRedirectTo: redirectTo,
-        data: {
-          full_name: opts.fullName,
-          company_name: opts.companyName,
-          invite_token: opts.inviteToken,
+      try {
+        await supabase.auth.signOut({ scope: "local" });
+      } catch {
+        // ignore stale sessions
+      }
+      clearOnboardingCache();
+      emit({ ...DEFAULT, ready: true });
+      const { error } = await supabase.auth.signUp({
+        email: opts.email,
+        password: opts.password,
+        options: {
+          emailRedirectTo: redirectTo,
+          data: {
+            full_name: opts.fullName,
+            company_name: opts.companyName,
+            invite_token: opts.inviteToken,
+          },
         },
-      },
-    });
-    if (!error) console.info("[cadastro] usuário solicitado/criado", { email: opts.email, hasInvite: !!opts.inviteToken });
-    return error;
+      });
+      if (!error) console.info("[cadastro] usuário solicitado/criado", { email: opts.email, hasInvite: !!opts.inviteToken });
+      return error;
+    } catch (error) {
+      console.error("[cadastro] falha inesperada", error);
+      return error instanceof Error ? error : new Error("Não foi possível criar a conta. Tente novamente.");
+    }
   },
   async signOut() {
-    await supabase.auth.signOut();
     clearOnboardingCache();
     emit({ ...DEFAULT, ready: true });
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      hydrationVersion += 1;
+      emit({ ...DEFAULT, ready: true });
+    }
   },
   async setOnboarded(v: boolean) {
     if (cache.orgId) {

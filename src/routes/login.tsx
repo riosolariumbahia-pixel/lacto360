@@ -26,28 +26,26 @@ function LoginPage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const error = await sessionApi.signIn(email, pw);
-    if (error) {
-      setLoading(false);
-      toast.error(error.message === "Invalid login credentials" ? "E-mail ou senha incorretos." : error.message);
-      return;
-    }
-    if (invite) {
-      try {
+    try {
+      const error = await sessionApi.signIn(email, pw);
+      if (error) {
+        toast.error(error.message === "Invalid login credentials" ? "E-mail ou senha incorretos." : error.message);
+        return;
+      }
+      if (invite) {
         await acceptInvitationByToken(invite);
         console.info("[login] convite aceito após autenticação");
         toast.success("Convite aceito!");
-      } catch (err) {
-        console.error("[login] erro ao aceitar convite", err);
-        toast.error(`Login ok, mas não aceitei o convite: ${(err as Error).message}`);
-      } finally {
-        setLoading(false);
+        window.location.assign("/app");
+        return;
       }
-      window.location.assign("/app");
-      return;
+      navigate({ to: "/app" });
+    } catch (error) {
+      console.error("[login] erro durante o acesso", error);
+      toast.error(invite ? `Login realizado, mas o convite não foi aceito: ${(error as Error).message}` : "Não foi possível entrar. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
-    navigate({ to: "/app" });
   }
 
   return (
