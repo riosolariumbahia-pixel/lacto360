@@ -1,34 +1,36 @@
-# Recuperar acesso às contas do Lacto360
+# Corrigir o acesso à conta do Lacto360
 
-## Objetivo
-Restabelecer o backend hospedado e garantir que contas existentes e novos cadastros consigam autenticar, carregar sua empresa e entrar no sistema sem travar.
+## Diagnóstico confirmado
+- O backend hospedado está disponível e respondendo normalmente.
+- A autenticação da conta informada foi aceita com sucesso às 20:31 de hoje.
+- A conta possui perfil, empresa e papel de administrador consistentes; não há vínculo ausente ou divergente.
+- O bloqueio acontece no navegador depois da autenticação: a sessão é carregada por caminhos concorrentes, executa novas consultas durante eventos de autenticação e pode manter a tela em “Entrando...” ou “Carregando...”.
+- O tratamento atual também não encerra o carregamento quando uma chamada lança erro de rede, e o ouvinte global atualiza todas as consultas até em eventos automáticos de sessão.
 
-## Etapas
-1. **Reativar o Lovable Cloud**
-   - Retomar o backend atualmente pausado.
-   - Aguardar o estado saudável antes de executar consultas ou alterações.
+## Correções
+1. **Estabilizar a sessão após o login**
+   - Centralizar a inicialização e atualização da sessão para impedir carregamentos simultâneos.
+   - Não consultar perfil e permissões dentro do bloqueio do evento de autenticação; agendar a atualização com segurança.
+   - Validar a identidade atual antes de liberar o acesso e manter perfil, empresa e papel sincronizados.
 
-2. **Validar integridade das contas**
-   - Conferir usuários, perfis, organizações e papéis.
-   - Identificar contas sem perfil, organização ou papel e corrigir somente os vínculos inconsistentes.
-   - Revisar o gatilho de criação de conta e a função de aceite de convite para impedir novas contas incompletas.
+2. **Impedir telas travadas**
+   - Garantir que login e cadastro sempre saiam de “Entrando...” ou “Criando...”, inclusive em erro inesperado, indisponibilidade ou demora excessiva.
+   - Mostrar mensagens claras e permitir nova tentativa sem recarregar dados de outra conta.
+   - Remover redirecionamentos concorrentes entre login, onboarding e área interna.
 
-3. **Corrigir o fluxo de autenticação**
-   - Garantir que login e cadastro sempre encerrem o estado de carregamento em falhas de rede ou autenticação.
-   - Exibir uma mensagem clara quando o backend estiver temporariamente indisponível.
-   - Preservar o isolamento entre organizações e atualizar a sessão após login, cadastro ou convite.
-   - Evitar redirecionamentos repetidos entre login, onboarding e `/app`.
+3. **Corrigir limpeza e troca de conta**
+   - Cancelar e limpar dados protegidos antes do logout.
+   - Atualizar o aplicativo somente nos eventos relevantes de entrada, saída e alteração de usuário.
+   - Preservar o isolamento por empresa e impedir que dados em memória sobrevivam à troca de conta.
 
-4. **Validar ponta a ponta**
-   - Testar abertura das páginas públicas de login e cadastro.
-   - Testar autenticação, logout e persistência após recarregar a página.
-   - Testar criação de uma nova conta e confirmar perfil, organização e papel no banco.
-   - Testar uma conta existente e o carregamento correto da organização associada.
-   - Conferir build, erros de runtime e resposta da versão publicada.
+4. **Validar o acesso real**
+   - Executar login autenticado na prévia com a sessão disponível, confirmar entrada na área interna e recarregar a página.
+   - Confirmar que empresa e papel carregados correspondem à conta autenticada.
+   - Testar logout e verificar que voltar no navegador não reabre conteúdo protegido.
+   - Verificar erros de execução, chamadas de rede e build final.
 
 ## Resultado esperado
-- Contas existentes entram normalmente.
-- Novas contas são criadas com organização e papel administrativo próprios.
-- Nenhum usuário visualiza dados de outra empresa.
-- Botões não ficam presos em “Entrando...” ou “Criando...”.
-- Falhas temporárias do backend são informadas sem travar a interface.
+- O login entra imediatamente na conta correta.
+- A tela não permanece em “Entrando...” ou “Carregando...”.
+- Recarregar a página mantém a sessão válida.
+- Logout e troca de conta removem todos os dados da conta anterior.
