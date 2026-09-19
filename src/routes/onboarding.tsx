@@ -40,31 +40,42 @@ function OnboardingPage() {
   }, [session.ready, session.user, session.onboarded, session.user?.laticinio, companyName, navigate]);
 
   async function finish() {
-    if (!session.orgId || !session.user) return;
+    if (!session.orgId || !session.user) {
+      toast.error("Sua conta ainda está sendo carregada. Aguarde alguns segundos e tente novamente.");
+      return;
+    }
+    const orgId = session.orgId;
+    const userId = session.user.id;
     setSaving(true);
     try {
       if (companyName.trim() && companyName.trim() !== session.user.laticinio) {
-        await supabase.from("organizations").update({ name: companyName.trim() }).eq("id", session.orgId);
+        const { error } = await supabase
+          .from("organizations")
+          .update({ name: companyName.trim() })
+          .eq("id", orgId);
+        if (error) throw error;
       }
       if (productName.trim()) {
-        await supabase.from("inventory_items").insert({
-          org_id: session.orgId,
+        const { error } = await supabase.from("inventory_items").insert({
+          org_id: orgId,
           name: productName.trim(),
           unit: productUnit,
           sale_price: Number(productPrice) || 0,
           category: "produto",
         });
+        if (error) throw error;
       }
       const validInvites = invites.filter((i) => i.email.includes("@"));
       if (validInvites.length) {
-        await supabase.from("invitations").insert(
+        const { error } = await supabase.from("invitations").insert(
           validInvites.map((i) => ({
-            org_id: session.orgId!,
+            org_id: orgId,
             email: i.email.trim().toLowerCase(),
             role: i.role,
-            invited_by: session.user!.id,
+            invited_by: userId,
           })),
         );
+        if (error) throw error;
       }
       await sessionApi.setOnboarded(true);
       toast.success("Tudo pronto! Bem-vindo ao SeuLaticínio 360.");
@@ -182,8 +193,8 @@ function OnboardingPage() {
             {step < steps.length - 1 ? (
               <Button className="bg-gradient-primary" onClick={() => setStep(step + 1)}>Continuar</Button>
             ) : (
-              <Button className="bg-gradient-primary" onClick={finish} disabled={saving}>
-                {saving ? "Salvando..." : "Concluir e entrar"}
+              <Button className="bg-gradient-primary" onClick={finish} disabled={saving || !session.ready}>
+                {!session.ready ? "Carregando conta..." : saving ? "Salvando..." : "Concluir e entrar"}
               </Button>
             )}
           </div>

@@ -25,6 +25,7 @@ function AppLayout() {
     if (!session.user) navigate({ to: "/login" });
     else if (!session.onboarded) navigate({ to: "/onboarding" });
     else if (
+      session.role === "admin" &&
       session.plan === "trial" &&
       trialDaysLeft(session) <= 0 &&
       path !== "/app/assinatura"
@@ -62,6 +63,24 @@ function AppLayout() {
         <div className="flex items-center gap-2 text-muted-foreground">
           <Sparkles className="size-4 animate-pulse" />
           <span className="text-sm">Carregando...</span>
+        </div>
+      </div>
+    );
+  }
+
+  const trialExpiredForMember =
+    session.role !== "admin" && session.plan === "trial" && trialDaysLeft(session) <= 0;
+
+  if (trialExpiredForMember) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background px-4">
+        <div className="max-w-md text-center">
+          <Sparkles className="mx-auto size-8 text-primary" />
+          <h1 className="mt-4 text-xl font-semibold">Período de avaliação encerrado</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Peça ao administrador do seu laticínio para renovar o plano. Seu acesso será liberado
+            assim que a assinatura for ativada.
+          </p>
         </div>
       </div>
     );
