@@ -7,8 +7,10 @@ import { Sparkles, Check } from "lucide-react";
 import { sessionApi } from "@/lib/session";
 import { acceptInvitationByToken } from "@/lib/team";
 import { toast } from "sonner";
+import { routeHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/cadastro")({
+  head: () => routeHead("Criar conta", "Crie sua conta e comece a gerenciar seu laticínio no Lacto360."),
   validateSearch: (s: Record<string, unknown>): { invite?: string } => {
     const invite = typeof s.invite === "string" ? s.invite : undefined;
     return invite ? { invite } : {};

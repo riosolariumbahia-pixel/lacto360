@@ -37,8 +37,10 @@ import {
 } from "@/lib/finance";
 
 import { RoleGate } from "@/components/app/role-gate";
+import { routeHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/app/financeiro")({
+  head: () => routeHead("Financeiro", "Controle contas a pagar, contas a receber e o fluxo de caixa do laticínio."),
   component: () => (
     <RoleGate roles={["admin", "finance_manager"]}>
       <FinanceiroPage />

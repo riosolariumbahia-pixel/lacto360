@@ -20,8 +20,10 @@ import { cn } from "@/lib/utils";
 import { useSession } from "@/lib/session";
 import { operationsApi, fmtNum, type InventoryItem } from "@/lib/operations";
 import { RoleGate } from "@/components/app/role-gate";
+import { routeHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/app/estoque")({
+  head: () => routeHead("Estoque e insumos", "Controle produtos, insumos, embalagens e movimentações de estoque."),
   component: () => (
     <RoleGate roles={["admin", "op_manager"]}>
       <EstoquePage />

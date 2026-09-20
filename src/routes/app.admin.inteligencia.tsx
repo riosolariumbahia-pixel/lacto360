@@ -17,8 +17,10 @@ import { financeApi, isOverdue, entryRemaining } from "@/lib/finance";
 import { openWhatsapp, msgCobranca } from "@/lib/whatsapp";
 import { fmtBRL } from "@/lib/utils";
 import { toast } from "sonner";
+import { routeHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/app/admin/inteligencia")({
+  head: () => routeHead("Inteligência de negócio", "Acompanhe oportunidades, cobranças e desempenho comercial do laticínio."),
   component: () => (
     <RoleGate roles={["admin"]}>
       <IntelligencePage />

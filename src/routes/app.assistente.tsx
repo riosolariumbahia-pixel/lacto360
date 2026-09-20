@@ -12,8 +12,12 @@ import { PageHeader } from "@/components/app/page-header";
 import { AiInsightCard } from "@/components/app/ai-insight-card";
 import { cn } from "@/lib/utils";
 import { chatWithAssistant, generateInsights } from "@/lib/ai.functions";
+import { routeHead } from "@/lib/seo";
 
-export const Route = createFileRoute("/app/assistente")({ component: AssistentePage });
+export const Route = createFileRoute("/app/assistente")({
+  head: () => routeHead("Assistente 360 IA", "Consulte indicadores e receba análises inteligentes sobre o seu laticínio."),
+  component: AssistentePage,
+});
 
 type Msg = { id: number; role: "user" | "assistant"; content: string };
 type Insight = { id: number; title: string; text: string; tone: "success" | "warning" | "info"; icon: "trend" | "alert" | "users" | "target" };
