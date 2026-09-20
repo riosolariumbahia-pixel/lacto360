@@ -18,8 +18,12 @@ import {
 import { useSession } from "@/lib/session";
 import { ROLE_LABEL, inviteLink, teamApi, type AppRole } from "@/lib/team";
 import { toast } from "sonner";
+import { routeHead } from "@/lib/seo";
 
-export const Route = createFileRoute("/app/equipe")({ component: TeamPage });
+export const Route = createFileRoute("/app/equipe")({
+  head: () => routeHead("Equipe", "Gerencie membros, perfis de acesso e convites da sua equipe."),
+  component: TeamPage,
+});
 
 const ROLES: AppRole[] = ["admin", "sales_manager", "op_manager", "finance_manager", "seller"];
 

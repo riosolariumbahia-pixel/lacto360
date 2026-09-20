@@ -17,8 +17,10 @@ import {
 } from "@/components/ui/dialog";
 import { auditApi, TABLE_LABEL, AUDIT_TABLES, type AuditLog } from "@/lib/audit";
 import { toast } from "sonner";
+import { routeHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/app/admin/auditoria")({
+  head: () => routeHead("Auditoria", "Consulte o histórico de alterações e ações realizadas no Lacto360."),
   component: () => (
     <RoleGate roles={["admin"]}>
       <AuditPage />

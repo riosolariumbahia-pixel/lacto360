@@ -10,8 +10,10 @@ import {
 import { auditApi, TABLE_LABEL, type DeletedRecord, type SoftDeleteTable } from "@/lib/audit";
 import { toast } from "sonner";
 import { RotateCcw } from "lucide-react";
+import { routeHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/app/admin/lixeira")({
+  head: () => routeHead("Lixeira", "Consulte e restaure registros removidos no Lacto360."),
   component: () => (
     <RoleGate roles={["admin"]}>
       <TrashPage />

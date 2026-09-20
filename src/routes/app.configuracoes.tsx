@@ -8,8 +8,12 @@ import { sessionApi, trialDaysLeft, useSession } from "@/lib/session";
 import { toast } from "sonner";
 import { SecurityCard } from "@/components/app/security-card";
 import { BackupCard } from "@/components/app/backup-card";
+import { routeHead } from "@/lib/seo";
 
-export const Route = createFileRoute("/app/configuracoes")({ component: ConfigPage });
+export const Route = createFileRoute("/app/configuracoes")({
+  head: () => routeHead("Configurações", "Gerencie sua conta, segurança, plano e preferências."),
+  component: ConfigPage,
+});
 
 const proPerks = [
   "Assistente 360 IA ilimitado",

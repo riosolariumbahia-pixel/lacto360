@@ -6,8 +6,12 @@ import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { sessionApi, trialDaysLeft, useSession } from "@/lib/session";
+import { routeHead } from "@/lib/seo";
 
-export const Route = createFileRoute("/app/assinatura")({ component: SubscriptionPage });
+export const Route = createFileRoute("/app/assinatura")({
+  head: () => routeHead("Assinatura", "Consulte e gerencie o plano do seu laticínio."),
+  component: SubscriptionPage,
+});
 
 const PRO_PERKS = [
   "Produção, estoque, vendas e financeiro ilimitados",

@@ -20,8 +20,10 @@ import { useSession } from "@/lib/session";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { routeHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/app/")({
+  head: () => routeHead("Painel", "Acompanhe os principais indicadores de produção, vendas e finanças do laticínio."),
   component: DashboardPage,
 });
 

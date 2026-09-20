@@ -14,8 +14,10 @@ import { fmtBRL } from "@/lib/utils";
 import { reportsApi, exportReportCSV, type Period } from "@/lib/reports";
 import { toast } from "sonner";
 import { RoleGate } from "@/components/app/role-gate";
+import { routeHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/app/relatorios")({
+  head: () => routeHead("Relatórios", "Analise o desempenho consolidado de produção, vendas e finanças."),
   component: () => (
     <RoleGate roles={["admin"]}>
       <RelPage />

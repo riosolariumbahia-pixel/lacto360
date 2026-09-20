@@ -23,8 +23,12 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { useSession } from "@/lib/session";
 import { commercialApi, firstOfMonth, type OrderChannel, type OrderStatus, type SalesOrder } from "@/lib/commercial";
 import { operationsApi, fmtBRL, fmtNum, type InventoryItem } from "@/lib/operations";
+import { routeHead } from "@/lib/seo";
 
-export const Route = createFileRoute("/app/vendas")({ component: VendasPage });
+export const Route = createFileRoute("/app/vendas")({
+  head: () => routeHead("Vendas e pedidos", "Gerencie pedidos, produtos, canais e desempenho comercial."),
+  component: VendasPage,
+});
 
 const COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)"];
 const STATUS_LABEL: Record<OrderStatus, string> = {

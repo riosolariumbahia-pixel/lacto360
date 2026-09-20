@@ -26,8 +26,10 @@ import { RoleGate } from "@/components/app/role-gate";
 import {
   operationsApi, fmtBRL, fmtNum, type ButterLot, type CheeseLot, type InventoryItem,
 } from "@/lib/operations";
+import { routeHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/app/producao")({
+  head: () => routeHead("Produção", "Registre e acompanhe lotes de manteiga e queijo coalho."),
   component: () => (
     <RoleGate roles={["admin", "op_manager"]}>
       <ProducaoPage />

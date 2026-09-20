@@ -11,8 +11,12 @@ import { PageHeader } from "@/components/app/page-header";
 import { useSession } from "@/lib/session";
 import { commercialApi, firstOfMonth } from "@/lib/commercial";
 import { fmtBRL } from "@/lib/operations";
+import { routeHead } from "@/lib/seo";
 
-export const Route = createFileRoute("/app/comercial")({ component: ComercialPage });
+export const Route = createFileRoute("/app/comercial")({
+  head: () => routeHead("Gestão comercial", "Acompanhe metas, comissões e desempenho da equipe comercial."),
+  component: ComercialPage,
+});
 
 function ComercialPage() {
   const session = useSession();

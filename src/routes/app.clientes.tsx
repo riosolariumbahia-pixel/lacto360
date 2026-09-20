@@ -20,8 +20,12 @@ import { useSession } from "@/lib/session";
 import { commercialApi, firstOfMonth, type Customer } from "@/lib/commercial";
 import { fmtBRL } from "@/lib/operations";
 import { openWhatsapp, msgBoasVindas } from "@/lib/whatsapp";
+import { routeHead } from "@/lib/seo";
 
-export const Route = createFileRoute("/app/clientes")({ component: ClientesPage });
+export const Route = createFileRoute("/app/clientes")({
+  head: () => routeHead("Clientes", "Gerencie a carteira, o relacionamento e os indicadores dos seus clientes."),
+  component: ClientesPage,
+});
 
 function ClientesPage() {
   const session = useSession();
