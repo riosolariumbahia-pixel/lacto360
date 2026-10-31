@@ -957,6 +957,7 @@ export type Database = {
           id: string
         }[]
       }
+      org_has_active_subscription: { Args: { _org: string }; Returns: boolean }
       restore_record: {
         Args: { _id: string; _table: string }
         Returns: undefined
