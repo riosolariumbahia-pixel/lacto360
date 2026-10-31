@@ -194,10 +194,9 @@ function Landing() {
           <Badge variant="secondary">Preços</Badge>
           <h2 className="mt-3 font-serif text-4xl md:text-5xl">Comece grátis. Cresça quando quiser.</h2>
         </div>
-        <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-2">
           <PricingCard name="Trial" price="Grátis" desc="7 dias com tudo do Pro." perks={["Tudo do Pro","Sem cartão","7 dias completos"]} cta="Começar agora" highlight={false} />
           <PricingCard name="Pro" price="R$ 97" suffix="/mês" desc="Para o seu laticínio." perks={["Produção, estoque, vendas, financeiro","Assistente 360 IA ilimitado","Relatórios avançados","Suporte prioritário"]} cta="Assinar Pro" highlight />
-          <PricingCard name="Anual" price="R$ 77" suffix="/mês" desc="Pague 12, leve 14." perks={["Tudo do Pro","2 meses grátis","Onboarding personalizado"]} cta="Economizar 20%" highlight={false} />
         </div>
       </section>
 
