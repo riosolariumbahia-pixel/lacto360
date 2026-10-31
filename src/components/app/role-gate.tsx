@@ -1,9 +1,18 @@
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { ShieldAlert } from "lucide-react";
-import { useSession, type AppRole } from "@/lib/session";
+import { homeForRole, useSession, type AppRole } from "@/lib/session";
 
 export function RoleGate({ roles, children }: { roles: AppRole[]; children: ReactNode }) {
   const session = useSession();
+  const navigate = useNavigate();
+  const denied = session.ready && (!session.role || !roles.includes(session.role));
+  useEffect(() => {
+    if (!denied) return;
+    toast.error("Seu perfil não tem permissão para acessar esta área.");
+    navigate({ to: homeForRole(session.role) });
+  }, [denied, session.role, navigate]);
   if (!session.ready) return null;
   if (!session.role || !roles.includes(session.role)) {
     return (

@@ -30,6 +30,7 @@ function AppLayout() {
       trialDaysLeft(session) <= 0 &&
       path !== "/app/assinatura"
     ) {
+      toast.warning("Seu período de avaliação terminou. Ative o plano para continuar.");
       navigate({ to: "/app/assinatura" });
     } else if (session.role && !canAccess(path, session.role)) {
       toast.error("Você não tem permissão para acessar esta área.");
