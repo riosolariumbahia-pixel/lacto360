@@ -1,4 +1,7 @@
 # Stripe monthly subscriptions
+- [ ] Audit account and payment flows and document concrete gaps.
+- [ ] Implement verified fixes with regression tests.
+- [ ] Validate available signed-in flows and provide preview test steps and remaining external blockers.
 - [x] Verify the existing Stripe catalog and enforce the confirmed company-wide, immediate-charge, end-of-period cancellation rules with no plan switching; sandbox portal configuration accepted by Stripe and 11 tests passed.
 - [x] Connect secure checkout for the existing monthly Pro plan.
 - [x] Persist subscriptions per company and payment environment; confirm payments before granting access.
