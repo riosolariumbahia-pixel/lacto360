@@ -17,7 +17,7 @@ import { SubscriptionCheckout } from "@/components/app/subscription-checkout";
 
 export const Route = createFileRoute("/app/assinatura")({
   head: () => routeHead("Assinatura", "Consulte e gerencie o plano do seu laticínio."),
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (search: Record<string, unknown>): { session_id?: string } => ({
     session_id: typeof search.session_id === "string" && /^cs_[a-zA-Z0-9_]+$/.test(search.session_id) ? search.session_id : undefined,
   }),
   component: SubscriptionPage,
