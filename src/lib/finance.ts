@@ -1,3 +1,4 @@
+import { withSafeMutations } from "./safe-mutation";
 import { supabase } from "@/integrations/supabase/client";
 
 export type FinanceCategoryKind = "receita" | "despesa";
@@ -42,7 +43,7 @@ export type FinancePayment = {
   notes: string | null;
 };
 
-export const financeApi = {
+const raw_financeApi = {
   async listCategories() {
     const { data, error } = await supabase
       .from("finance_categories").select("*").eq("is_active", true).order("name");
@@ -139,3 +140,5 @@ export function statusLabel(e: FinanceEntry): { label: string; tone: "ok" | "war
   if (e.status === "parcial") return { label: "Parcial", tone: "warn" };
   return { label: "Pendente", tone: "warn" };
 }
+
+export const financeApi = withSafeMutations(raw_financeApi);

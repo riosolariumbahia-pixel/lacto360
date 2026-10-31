@@ -1,3 +1,4 @@
+import { withSafeMutations } from "./safe-mutation";
 import { supabase } from "@/integrations/supabase/client";
 
 export type InventoryItem = {
@@ -54,7 +55,7 @@ export type CheeseLot = {
   created_at: string;
 };
 
-export const operationsApi = {
+const raw_operationsApi = {
   async listItems() {
     const { data, error } = await supabase
       .from("inventory_items")
@@ -168,3 +169,4 @@ export function fmtNum(n: number, frac = 0) {
     maximumFractionDigits: frac,
   });
 }
+export const operationsApi = withSafeMutations(raw_operationsApi);

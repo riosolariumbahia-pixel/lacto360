@@ -24,3 +24,15 @@ export async function safeMutation<T>(fn: () => Promise<T>): Promise<T> {
     throw new Error(friendlyError(e));
   }
 }
+
+/** Wraps every write method (anything not starting with "list"/"get") of an API object with safeMutation. */
+export function withSafeMutations<T extends Record<string, unknown>>(api: T): T {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(api)) {
+    out[k] =
+      typeof v === "function" && !/^(list|get)/.test(k)
+        ? (...args: unknown[]) => safeMutation(() => (v as (...a: unknown[]) => Promise<unknown>).apply(api, args))
+        : v;
+  }
+  return out as T;
+}

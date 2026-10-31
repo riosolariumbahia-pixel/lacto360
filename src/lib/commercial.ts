@@ -1,3 +1,4 @@
+import { withSafeMutations } from "./safe-mutation";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Customer = {
@@ -67,7 +68,7 @@ export type SellerProfile = {
   role: "admin" | "sales_manager" | "seller" | "op_manager";
 };
 
-export const commercialApi = {
+const raw_commercialApi = {
   // ---- Customers ----
   async listCustomers() {
     const { data, error } = await supabase
@@ -227,3 +228,5 @@ export const commercialApi = {
 export function firstOfMonth(d = new Date()): string {
   return new Date(Date.UTC(d.getFullYear(), d.getMonth(), 1)).toISOString().slice(0, 10);
 }
+
+export const commercialApi = withSafeMutations(raw_commercialApi);

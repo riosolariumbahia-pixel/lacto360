@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireActiveSubscription } from "./subscription-middleware";
 
 const GATEWAY_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const MODEL = "google/gemini-2.5-flash";
@@ -92,7 +92,7 @@ function gatewayError(status: number): string {
 }
 
 export const chatWithAssistant = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSubscription])
   .inputValidator((input) =>
     z.object({
       messages: z
@@ -140,7 +140,7 @@ export const chatWithAssistant = createServerFn({ method: "POST" })
   });
 
 export const generateInsights = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireActiveSubscription])
   .handler(async ({ context }) => {
     const { supabase, userId } = context as any;
     const apiKey = process.env.LOVABLE_API_KEY;

@@ -1,3 +1,5 @@
+import { friendlyError } from "@/lib/safe-mutation";
+import { Skeleton } from "@/components/ui/skeleton";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
@@ -349,7 +351,7 @@ function NewEntryDialog({
       setOpen(false);
       setDescription(""); setAmount(""); setSupplier(""); setNotes(""); setCategoryId("");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(friendlyError(e)),
   });
 
   return (
@@ -436,7 +438,7 @@ function PaymentDialog({ orgId, entry }: { orgId: string; entry: FinanceEntry })
       setOpen(false);
       setNotes("");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(friendlyError(e)),
   });
 
   return (
@@ -528,7 +530,7 @@ function NewCategoryDialog({ orgId, kind }: { orgId: string; kind: "receita" | "
       qc.invalidateQueries({ queryKey: ["finance_categories"] });
       setOpen(false); setName("");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(friendlyError(e)),
   });
 
   return (

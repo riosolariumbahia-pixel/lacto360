@@ -1,3 +1,5 @@
+import { friendlyError } from "@/lib/safe-mutation";
+import { Skeleton } from "@/components/ui/skeleton";
 import { createFileRoute } from "@tanstack/react-router";
 import { ShoppingCart, TrendingUp, Package, Plus, Loader2, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -211,7 +213,7 @@ function OrderActions({ order }: { order: SalesOrder }) {
       qc.invalidateQueries({ queryKey: ["sales_orders"] });
       qc.invalidateQueries({ queryKey: ["inventory_items"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(friendlyError(e)),
   });
   const next: OrderStatus[] = order.status === "rascunho" ? ["confirmado", "cancelado"]
     : order.status === "confirmado" ? ["em_rota", "entregue", "cancelado"]
@@ -296,7 +298,7 @@ function NewOrderDialog({
       setCustomerId(""); setDiscount("0"); setNotes("");
       setLines([{ item_id: "", quantity: "1", unit_price: "0" }]);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(friendlyError(e)),
   });
 
   const valid = !!customerId && !!sellerId
