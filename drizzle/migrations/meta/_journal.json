@@ -8,6 +8,13 @@
       "when": 1793459495487,
       "tag": "0000_lock_subscription_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793486896721,
+      "tag": "0001_stripe_company_billing",
+      "breakpoints": true
     }
   ]
 }

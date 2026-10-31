@@ -446,6 +446,7 @@ export type Database = {
       }
       organizations: {
         Row: {
+          billing_provider: string | null
           created_at: string
           id: string
           name: string
@@ -456,6 +457,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          billing_provider?: string | null
           created_at?: string
           id?: string
           name: string
@@ -466,6 +468,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          billing_provider?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -810,6 +813,91 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_checkout_reservations: {
+        Row: {
+          created_at: string
+          environment: string
+          org_id: string
+          request_id: string
+          stripe_session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          environment: string
+          org_id: string
+          request_id?: string
+          stripe_session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          environment?: string
+          org_id?: string
+          request_id?: string
+          stripe_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_checkout_reservations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stripe_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          environment: string
+          id: string
+          org_id: string
+          price_id: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          environment: string
+          id?: string
+          org_id: string
+          price_id: string
+          status: string
+          stripe_customer_id: string
+          stripe_subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          environment?: string
+          id?: string
+          org_id?: string
+          price_id?: string
+          status?: string
+          stripe_customer_id?: string
+          stripe_subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_subscriptions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -958,6 +1046,22 @@ export type Database = {
         }[]
       }
       org_has_active_subscription: { Args: { _org: string }; Returns: boolean }
+      reserve_stripe_checkout: {
+        Args: { _env: string; _org: string }
+        Returns: {
+          created_at: string
+          environment: string
+          org_id: string
+          request_id: string
+          stripe_session_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "stripe_checkout_reservations"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       restore_record: {
         Args: { _id: string; _table: string }
         Returns: undefined
