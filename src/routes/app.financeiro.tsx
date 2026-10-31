@@ -68,6 +68,7 @@ function FinanceiroPage() {
     enabled: !!orgId,
   });
 
+  const loading = entriesQ.isLoading || categoriesQ.isLoading;
   const entries = entriesQ.data ?? [];
   const categories = categoriesQ.data ?? [];
   const catBy = useMemo(() => new Map(categories.map((c) => [c.id, c])), [categories]);
@@ -76,7 +77,6 @@ function FinanceiroPage() {
   const cashFlow = useMemo(() => computeCashFlow(entries), [entries]);
   const expensesByCat = useMemo(() => computeExpensesByCat(entries, catBy), [entries, catBy]);
 
-  const loading = entriesQ.isLoading || categoriesQ.isLoading;
 
   return (
     <div className="space-y-6">
@@ -86,21 +86,22 @@ function FinanceiroPage() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard label="Faturamento (mês)" value={kpis.revenueMonth} format={fmtBRL} icon={Wallet} tone="primary" />
-        <KpiCard label="Despesa (mês)" value={kpis.expenseMonth} format={fmtBRL} icon={ArrowUpFromLine} tone="warning" />
-        <KpiCard label="Lucro (mês)" value={kpis.profitMonth} format={fmtBRL} icon={DollarSign} tone="gold" />
-        <KpiCard label="Margem" value={kpis.marginMonth} suffix="%" icon={TrendingUp} tone="info" />
+        <KpiCard loading={loading} label="Faturamento (mês)" value={kpis.revenueMonth} format={fmtBRL} icon={Wallet} tone="primary" />
+        <KpiCard loading={loading} label="Despesa (mês)" value={kpis.expenseMonth} format={fmtBRL} icon={ArrowUpFromLine} tone="warning" />
+        <KpiCard loading={loading} label="Lucro (mês)" value={kpis.profitMonth} format={fmtBRL} icon={DollarSign} tone="gold" />
+        <KpiCard loading={loading} label="Margem" value={kpis.marginMonth} suffix="%" icon={TrendingUp} tone="info" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard label="A receber em aberto" value={kpis.openReceivable} format={fmtBRL} icon={ArrowDownToLine} tone="info" />
-        <KpiCard label="A pagar em aberto" value={kpis.openPayable} format={fmtBRL} icon={ArrowUpFromLine} tone="warning" />
-        <KpiCard label="Vencidos" value={kpis.overdue} format={fmtBRL} icon={AlertCircle} tone="warning" />
+        <KpiCard loading={loading} label="A receber em aberto" value={kpis.openReceivable} format={fmtBRL} icon={ArrowDownToLine} tone="info" />
+        <KpiCard loading={loading} label="A pagar em aberto" value={kpis.openPayable} format={fmtBRL} icon={ArrowUpFromLine} tone="warning" />
+        <KpiCard loading={loading} label="Vencidos" value={kpis.overdue} format={fmtBRL} icon={AlertCircle} tone="warning" />
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center rounded-2xl border bg-card p-10 text-sm text-muted-foreground">
-          <Loader2 className="mr-2 size-4 animate-spin" /> Carregando…
+        <div className="space-y-3 rounded-2xl border bg-card p-5">
+          <Skeleton className="h-9 w-80" />
+          <Skeleton className="h-64 w-full rounded-xl" />
         </div>
       ) : (
         <Tabs defaultValue="overview">

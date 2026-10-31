@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function ChartCard({
   title,
@@ -7,12 +8,14 @@ export function ChartCard({
   action,
   children,
   className,
+  loading,
 }: {
   title: string;
   subtitle?: string;
   action?: ReactNode;
   children: ReactNode;
   className?: string;
+  loading?: boolean;
 }) {
   return (
     <div className={cn("rounded-2xl border bg-card p-5 animate-fade-in-up", className)}>
@@ -23,7 +26,7 @@ export function ChartCard({
         </div>
         {action}
       </div>
-      {children}
+      {loading ? <Skeleton className="h-56 w-full rounded-xl" /> : children}
     </div>
   );
 }
