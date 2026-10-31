@@ -1,7 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { paidAccess, paymentEnvironment, PRO_AMOUNT, PRO_CURRENCY, PRO_PRICE_ID } from "./billing-rules";
+import { BILLING_POLICY, BILLING_PORTAL_FEATURES, paidAccess, paymentEnvironment, PRO_AMOUNT, PRO_CURRENCY, PRO_PRICE_ID } from "./billing-rules";
 
 describe("monthly Pro billing", () => {
+  it("grants the purchased plan to the company", () => {
+    expect(BILLING_POLICY.scope).toBe("organization");
+  });
+  it("charges the subscription immediately", () => {
+    expect(BILLING_POLICY.charge).toBe("immediate");
+  });
+  it("schedules portal cancellation at the paid period end without proration", () => {
+    expect(BILLING_PORTAL_FEATURES.subscription_cancel.mode).toBe("at_period_end");
+    expect(BILLING_PORTAL_FEATURES.subscription_cancel.proration_behavior).toBe("none");
+  });
+  it("does not allow switching plans in the portal", () => {
+    expect(BILLING_PORTAL_FEATURES.subscription_update.enabled).toBe(false);
+  });
   it("charges the existing R$ 97 monthly plan", () => {
     expect(PRO_AMOUNT).toBe(9700);
     expect(PRO_CURRENCY).toBe("brl");
