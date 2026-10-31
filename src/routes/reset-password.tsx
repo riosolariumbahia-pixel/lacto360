@@ -7,8 +7,9 @@ import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { sessionApi } from "@/lib/session";
 import { toast } from "sonner";
+import { routeHead } from "@/lib/seo";
 
-export const Route = createFileRoute("/reset-password")({ component: ResetPasswordPage });
+export const Route = createFileRoute("/reset-password")({ head: () => routeHead("Recuperar senha", "Recupere o acesso à sua conta Lacto360 com segurança."), component: ResetPasswordPage });
 
 function ResetPasswordPage() {
   const navigate = useNavigate();

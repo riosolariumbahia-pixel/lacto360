@@ -80,10 +80,14 @@ async function hydrate(userId: string | null, email: string | null) {
     .eq("user_id", userId)
     .limit(1);
 
+  const { data: activePlan, error: planError } = profile?.org_id
+    ? await supabase.rpc("org_has_active_subscription", { _org: profile.org_id })
+    : { data: false, error: null };
+
   if (version !== hydrationVersion) return;
-  if (profileError || rolesError) {
+  if (profileError || rolesError || planError) {
     console.error("[sessao] falha ao carregar perfil", profileError ?? rolesError);
-    throw profileError ?? rolesError;
+    throw profileError ?? rolesError ?? planError;
   }
   if (!profile?.org_id || !roles?.[0]?.role) {
     throw new Error("Sua conta ainda não possui empresa ou permissão vinculada.");
@@ -121,7 +125,7 @@ async function hydrate(userId: string | null, email: string | null) {
     },
     orgId: profile?.org_id ?? null,
     role,
-    plan: org?.plan === "pro" ? "pro" : "trial",
+    plan: org?.plan === "pro" && activePlan ? "pro" : "trial",
     trialEndsAt,
     trialStartedAt: trialEndsAt ? trialEndsAt - 7 * 86400000 : null,
     onboarded,
@@ -246,11 +250,11 @@ export const sessionApi = {
     }
     emit({ ...cache, onboarded: v });
   },
+  async refresh() {
+    await hydrate(cache.user?.id ?? null, cache.user?.email ?? null);
+  },
   async upgrade() {
-    if (!cache.orgId) return;
-    const { activateProPlan } = await import("./subscription.functions");
-    await activateProPlan();
-    emit({ ...cache, plan: "pro" });
+    throw new Error("Conclua o pagamento na página de assinatura para ativar o Pro.");
   },
   async resetPassword(email: string) {
     const redirectTo =
