@@ -12,8 +12,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABEL, type AppRole } from "@/lib/team";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { routeHead } from "@/lib/seo";
 
-export const Route = createFileRoute("/onboarding")({ component: OnboardingPage });
+export const Route = createFileRoute("/onboarding")({ head: () => routeHead("Primeiro acesso", "Configure seu laticínio, produtos e equipe no Lacto360."), component: OnboardingPage });
 
 const steps = ["Seu laticínio", "Primeiro produto", "Equipe"];
 const ROLES: AppRole[] = ["admin", "sales_manager", "op_manager", "finance_manager", "seller"];

@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { acceptInvitationByToken, getInvitationByToken, ROLE_LABEL } from "@/lib/team";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { routeHead } from "@/lib/seo";
 
-export const Route = createFileRoute("/convite/$token")({ component: InvitePage });
+export const Route = createFileRoute("/convite/$token")({ head: () => routeHead("Convite de equipe", "Confirme seu convite para a equipe de um laticínio no Lacto360."), component: InvitePage });
 
 function InvitePage() {
   const { token } = Route.useParams();

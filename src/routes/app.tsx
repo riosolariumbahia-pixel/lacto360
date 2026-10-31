@@ -11,8 +11,9 @@ import { TrialBanner } from "@/components/app/trial-banner";
 import { supabase } from "@/integrations/supabase/client";
 import { canAccess } from "@/lib/access";
 import { toast } from "sonner";
+import { routeHead } from "@/lib/seo";
 
-export const Route = createFileRoute("/app")({ component: AppLayout });
+export const Route = createFileRoute("/app")({ head: () => routeHead("Gestão do laticínio", "Área de gestão segura do Lacto360."), component: AppLayout });
 
 function AppLayout() {
   const session = useSession();
