@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Crown, Sparkles } from "lucide-react";
+import { ArrowLeft, Check, Crown, Loader2, Sparkles } from "lucide-react";
 import { PageHeader } from "@/components/app/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,15 +29,20 @@ function SubscriptionPage() {
   const isPro = session.plan === "pro";
   const expired = !isPro && days <= 0;
 
+  const inFlight = useRef(false);
+
   async function upgrade() {
+    if (inFlight.current || isPro) return;
+    inFlight.current = true;
     setLoading(true);
     try {
       await sessionApi.upgrade();
       toast.success("Plano Pro ativado! Bem-vindo.");
       navigate({ to: "/app" });
-    } catch {
-      toast.error("Falha ao ativar. Tente novamente.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao ativar. Tente novamente.");
     } finally {
+      inFlight.current = false;
       setLoading(false);
     }
   }
@@ -107,10 +112,12 @@ function SubscriptionPage() {
           <Button
             onClick={upgrade}
             disabled={isPro || loading}
+            aria-busy={loading}
             className="mt-6 w-full bg-gradient-primary shadow-glow"
             size="lg"
           >
-            {isPro ? "Plano ativo" : loading ? "Ativando..." : "Fazer upgrade para Pro"}
+            {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
+            {isPro ? "Plano ativo" : loading ? "Processando..." : "Fazer upgrade para Pro"}
           </Button>
           <p className="mt-2 text-center text-xs text-muted-foreground">
             Cobrança real em breve — ative agora sem custo durante o piloto.

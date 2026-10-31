@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import {
   Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Legend,
@@ -35,11 +35,11 @@ function DashboardPage() {
   const greet = h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite";
   const firstName = session.user?.name?.split(" ")[0] ?? "produtor";
 
-  const kpisQ = useQuery({ queryKey: ["dashboard", "kpis"], queryFn: getDashboardKPIs, staleTime: 30_000 });
-  const weeklyQ = useQuery({ queryKey: ["dashboard", "weekly"], queryFn: getWeeklyProduction, staleTime: 30_000 });
-  const monthlyQ = useQuery({ queryKey: ["dashboard", "monthly"], queryFn: getMonthlyFinance, staleTime: 30_000 });
-  const channelsQ = useQuery({ queryKey: ["dashboard", "channels"], queryFn: getSalesChannels, staleTime: 30_000 });
-  const topClientsQ = useQuery({ queryKey: ["dashboard", "topClients"], queryFn: () => getTopClients(5), staleTime: 30_000 });
+  const kpisQ = useQuery({ queryKey: ["dashboard", "kpis"], queryFn: getDashboardKPIs, staleTime: 30_000, placeholderData: keepPreviousData });
+  const weeklyQ = useQuery({ queryKey: ["dashboard", "weekly"], queryFn: getWeeklyProduction, staleTime: 30_000, placeholderData: keepPreviousData });
+  const monthlyQ = useQuery({ queryKey: ["dashboard", "monthly"], queryFn: getMonthlyFinance, staleTime: 30_000, placeholderData: keepPreviousData });
+  const channelsQ = useQuery({ queryKey: ["dashboard", "channels"], queryFn: getSalesChannels, staleTime: 30_000, placeholderData: keepPreviousData });
+  const topClientsQ = useQuery({ queryKey: ["dashboard", "topClients"], queryFn: () => getTopClients(5), staleTime: 30_000, placeholderData: keepPreviousData });
 
   useEffect(() => {
     if (session.ready && session.user) {

@@ -15,6 +15,11 @@ if (typeof globalThis.addEventListener === "function") {
   );
 }
 
+export function reportError(error: unknown) {
+  record(error);
+  console.error("[erro]", error);
+}
+
 export function consumeLastCapturedError(): unknown {
   if (!lastCapturedError) return undefined;
   if (Date.now() - lastCapturedError.at > TTL_MS) {

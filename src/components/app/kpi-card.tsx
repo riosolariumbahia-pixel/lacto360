@@ -2,6 +2,7 @@ import { Area, AreaChart, ResponsiveContainer } from "recharts";
 import { ArrowDownRight, ArrowUpRight, type LucideIcon } from "lucide-react";
 import { useCountUp } from "@/hooks/use-count-up";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Props = {
   label: string;
@@ -12,6 +13,7 @@ type Props = {
   tone?: "primary" | "gold" | "info" | "warning";
   spark?: { v: number }[];
   suffix?: string;
+  loading?: boolean;
 };
 
 const toneRing: Record<NonNullable<Props["tone"]>, string> = {
@@ -28,9 +30,18 @@ const toneStroke: Record<NonNullable<Props["tone"]>, string> = {
   warning: "var(--warning)",
 };
 
-export function KpiCard({ label, value, format, delta, icon: Icon, tone = "primary", spark, suffix }: Props) {
+export function KpiCard({ label, value, format, delta, icon: Icon, tone = "primary", spark, suffix, loading }: Props) {
   const v = useCountUp(value);
   const stroke = toneStroke[tone];
+  if (loading) {
+    return (
+      <div className="rounded-2xl border bg-card p-5" aria-busy="true">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="mt-3 h-9 w-32" />
+        <Skeleton className="mt-3 h-4 w-20" />
+      </div>
+    );
+  }
   return (
     <div className="group relative overflow-hidden rounded-2xl border bg-card p-5 hover-lift animate-fade-in-up">
       <div className="flex items-start justify-between">

@@ -248,7 +248,8 @@ export const sessionApi = {
   },
   async upgrade() {
     if (!cache.orgId) return;
-    await supabase.from("organizations").update({ plan: "pro" }).eq("id", cache.orgId);
+    const { activateProPlan } = await import("./subscription.functions");
+    await activateProPlan();
     emit({ ...cache, plan: "pro" });
   },
   async resetPassword(email: string) {
