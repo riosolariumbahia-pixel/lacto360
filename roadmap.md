@@ -1,4 +1,5 @@
 # Stripe monthly subscriptions
+- [ ] Verify the existing Stripe catalog and enforce the confirmed company-wide, immediate-charge, end-of-period cancellation rules with no plan switching.
 - [x] Connect secure checkout for the existing monthly Pro plan.
 - [x] Persist subscriptions per company and payment environment; confirm payments before granting access.
 - [x] Add billing management and loading/error states.
