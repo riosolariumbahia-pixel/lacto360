@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { PRO_AMOUNT, PRO_CURRENCY, PRO_PRICE_ID, paidAccess } from "./billing-rules";
+import { BILLING_PORTAL_FEATURES, PRO_AMOUNT, PRO_CURRENCY, PRO_PRICE_ID, paidAccess } from "./billing-rules";
 
 const environmentInput = z.object({ environment: z.enum(["sandbox", "live"]) });
 const checkoutInput = environmentInput.extend({ returnUrl: z.string().url() });
@@ -97,7 +97,20 @@ export const createBillingPortal = createServerFn({ method: "POST" })
       const { data: sub, error } = await context.supabase.from("stripe_subscriptions").select("stripe_customer_id")
         .eq("org_id", profile.org_id).eq("environment", data.environment).order("created_at", { ascending: false }).limit(1).maybeSingle();
       if (error || !sub) throw new Error("Nenhuma assinatura encontrada.");
-      const portal = await createStripeClient(data.environment).billingPortal.sessions.create({ customer: sub.stripe_customer_id, return_url: data.returnUrl });
+      const stripe = createStripeClient(data.environment);
+      const configurations = await stripe.billingPortal.configurations.list({ active: true, limit: 100 });
+      const existingConfiguration = configurations.data.find(config => config.metadata?.lacto360_policy === "monthly_company_v1");
+      const features = {
+        ...BILLING_PORTAL_FEATURES,
+        customer_update: { ...BILLING_PORTAL_FEATURES.customer_update, allowed_updates: [...BILLING_PORTAL_FEATURES.customer_update.allowed_updates] },
+      };
+      const configuration = existingConfiguration
+        ? await stripe.billingPortal.configurations.update(existingConfiguration.id, { features })
+        : await stripe.billingPortal.configurations.create({
+          features, metadata: { lacto360_policy: "monthly_company_v1" },
+          business_profile: { headline: "Lacto360 — assinatura Pro mensal" },
+        }, { idempotencyKey: `lacto360-${data.environment}-portal-monthly-company-v1` });
+      const portal = await stripe.billingPortal.sessions.create({ customer: sub.stripe_customer_id, return_url: data.returnUrl, configuration: configuration.id });
       return { url: portal.url };
     } catch (error) { return { error: getStripeErrorMessage(error) }; }
   });
