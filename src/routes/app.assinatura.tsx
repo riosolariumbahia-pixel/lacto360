@@ -173,18 +173,19 @@ function SubscriptionPage() {
             ))}
           </ul>
           <Button
-            onClick={hasBilling ? manage : upgrade}
+            onClick={billingActive ? manage : upgrade}
             disabled={loading || !!clientSecret || !configured || session.role !== "admin" || isPending || !!billingError}
             aria-busy={loading}
             className="mt-6 w-full bg-gradient-primary shadow-glow"
             size="lg"
           >
             {loading && <Loader2 className="mr-2 size-4 animate-spin" />}
-            {loading ? "Processando..." : hasBilling ? "Gerenciar assinatura" : clientSecret ? "Pagamento aberto" : "Assinar Pro"}
+            {loading ? "Processando..." : billingActive ? "Gerenciar assinatura" : clientSecret ? "Pagamento aberto" : "Assinar Pro"}
           </Button>
           <p className="mt-2 text-center text-xs text-muted-foreground">
             Assinatura mensal de R$ 97. Cancele quando quiser.
           </p>
+          {hasBilling && !billingActive && <Button variant="outline" className="mt-3 w-full" onClick={manage} disabled={loading}>Gerenciar assinatura anterior</Button>}
         </div>
       </div>
 

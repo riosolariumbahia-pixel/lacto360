@@ -54,6 +54,11 @@ export async function syncStripeSubscription(subscription: Stripe.Subscription, 
       .select("status,current_period_end").eq("org_id", orgId).eq("environment", "live").eq("price_id", PRO_PRICE_ID);
     if (readError) throw readError;
     const active = subscriptions?.some(s => paidAccess(s.status, s.current_period_end)) ?? false;
+    const { data: organization, error: organizationError } = await supabaseAdmin.from("organizations")
+      .select("billing_provider").eq("id", orgId).single();
+    if (organizationError) throw organizationError;
+    // An abandoned first checkout must not revoke an existing free trial or legacy Pro access.
+    if (!active && organization.billing_provider !== "stripe") return;
     const { error: updateError } = await supabaseAdmin.from("organizations")
       .update({ plan: active ? "pro" : "trial", billing_provider: "stripe" }).eq("id", orgId);
     if (updateError) throw updateError;
