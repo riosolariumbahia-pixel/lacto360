@@ -31,6 +31,7 @@ import { Route as ConviteTokenRouteImport } from './routes/convite.$token'
 import { Route as AppAdminAuditoriaRouteImport } from './routes/app.admin.auditoria'
 import { Route as AppAdminInteligenciaRouteImport } from './routes/app.admin.inteligencia'
 import { Route as AppAdminLixeiraRouteImport } from './routes/app.admin.lixeira'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -142,6 +143,12 @@ const AppAdminLixeiraRoute = AppAdminLixeiraRouteImport.update({
   path: '/admin/lixeira',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -166,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/auditoria': typeof AppAdminAuditoriaRoute
   '/app/admin/inteligencia': typeof AppAdminInteligenciaRoute
   '/app/admin/lixeira': typeof AppAdminLixeiraRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -189,6 +197,7 @@ export interface FileRoutesByTo {
   '/app/admin/auditoria': typeof AppAdminAuditoriaRoute
   '/app/admin/inteligencia': typeof AppAdminInteligenciaRoute
   '/app/admin/lixeira': typeof AppAdminLixeiraRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -214,6 +223,7 @@ export interface FileRoutesById {
   '/app/admin/auditoria': typeof AppAdminAuditoriaRoute
   '/app/admin/inteligencia': typeof AppAdminInteligenciaRoute
   '/app/admin/lixeira': typeof AppAdminLixeiraRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/app/admin/auditoria'
     | '/app/admin/inteligencia'
     | '/app/admin/lixeira'
+    | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/app/admin/auditoria'
     | '/app/admin/inteligencia'
     | '/app/admin/lixeira'
+    | '/api/public/payments/webhook'
   id:
     | '__root__'
     | '/'
@@ -287,6 +299,7 @@ export interface FileRouteTypes {
     | '/app/admin/auditoria'
     | '/app/admin/inteligencia'
     | '/app/admin/lixeira'
+    | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -297,6 +310,7 @@ export interface RootRouteChildren {
   OnboardingRoute: typeof OnboardingRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ConviteTokenRoute: typeof ConviteTokenRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -455,6 +469,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminLixeiraRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -504,6 +525,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardingRoute: OnboardingRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ConviteTokenRoute: ConviteTokenRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
